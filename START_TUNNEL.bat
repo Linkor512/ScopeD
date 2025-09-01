@@ -1,0 +1,1 @@
+lt --port 8765 --subdomain marka-c2-fortress-777 --local-host localhost

