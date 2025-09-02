@@ -97,7 +97,7 @@ async def main():
     site = web.TCPSite(runner, '0.0.0.0', 10000)
     await site.start()
     print("====== C2 SERVER (V2.0) ONLINE ======")
-    send_telegram_message("🚀 Сервер 'Крепость' V2.0 запущен.")
+    send_telegram_message("🚀 Сервер запущен.")
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
@@ -107,4 +107,5 @@ if __name__ == "__main__":
         print("\nСервер остановлен вручную.")
     finally:
         send_telegram_message("🛑 Сервер 'Крепость' V2.0 остановлен.")
+
 
