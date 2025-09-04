@@ -8,7 +8,7 @@ IMPLANTS, OPERATOR = {}, None
 # --- УБИРАЕМ API ДЛЯ ОТЧЕТОВ, ПОТОМУ ЧТО ТЫ РЕШИЛ, ЧТО ТЕЛЕГРАМ УМНЕЕ ---
 # функция handle_report() БОЛЬШЕ НЕ НУЖНА
 
-async defwebsocket_handler(request):
+async def websocket_handler(request):
     global OPERATOR, IMPLANTS
     ws = web.WebSocketResponse(); await ws.prepare(request)
     client_type, client_id = None, None
@@ -73,3 +73,4 @@ if __name__ == "__main__":
     try: asyncio.run(main())
     except KeyboardInterrupt: print("\nСервер остановлен.")
     finally: send_telegram_message("🛑 Сервер остановлен.")
+
