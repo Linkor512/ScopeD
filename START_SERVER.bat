@@ -1,1 +1,0 @@
-python C:\Users\marka\Documents\project\SCoPe-D с выходом в сеть 2
