@@ -1,2 +1,7 @@
 aiohttp
+Pillow
+pycryptodomex
+pypiwin32
+psutil
+soundcard
 requests
