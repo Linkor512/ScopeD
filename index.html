@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>C2 Коммандный Мостик v6.6</title>
+    <title>C2 Коммандный Мостикv6.6</title>
     <style>
         :root {
             --bg-color: #1a1a1c;
@@ -310,7 +310,7 @@
             <aside class="sidebar">
                 <h2>Боты в сети</h2>
                 <div id="bot-list">
-                    <p>Подключение...</p>
+                    <p style="text-align:center;">Подключение...</p>
                 </div>
             </aside>
             <div class="main-content">
@@ -344,25 +344,26 @@
                                 <div id="audio-files-list" class="grid-controls"></div>
                             </div>
                         </div>
-                        <div&gt; <h3>Локальные изображения</h3>
+                        <div>
+                            <h3>Локальные изображения</h3>
                             <div id="image-files-list" class="thumbnail-container"></div>
+                        </div>
+                    </section>
                 </div>
-                </section>
             </div>
-    </div>
-    </main>
+        </main>
 
-    <div id="resizer"></div>
-    <div class="log-container">
-        <div class="log-header" id="log-header">
-            <h3>Терминал</h3>
-            <div class="log-header-buttons">
-                <button id="clear-log-btn" title="Очистить консоль">🧹</button>
-                <button id="toggle-log-btn" title="Свернуть/Развернуть">&times;</button>
+        <div id="resizer"></div>
+        <div class="log-container">
+            <div class="log-header" id="log-header">
+                <h3>Терминал</h3>
+                <div class="log-header-buttons">
+                    <button id="clear-log-btn" title="Очистить консоль">🧹</button>
+                    <button id="toggle-log-btn" title="Свернуть/Развернуть">&times;</button>
+                </div>
             </div>
+            <div id="log-list"></div>
         </div>
-        <div id="log-list"></div>
-    </div>
     </div>
 
     <script>
@@ -455,10 +456,10 @@
         }
 
         function updateBotList(bots) {
-            log(`Получен список ботов: [${bots.map(b=>b.id).join(', ') || 'пусто'}]`);
+            log(`Получен список ботов: [${bots.map(b => b.id).join(', ') || 'пусто'}]`);
             const savedBotId = localStorage.getItem('lastSelectedBot');
             const currentSelected = selectedBotId;
-            ui.botList.innerHTML = bots.length ? '' : '<p>Нет ботов.</p>';
+            ui.botList.innerHTML = bots.length ? '' : '<p style="text-align:center;">Нет активных ботов.</p>';
             bots.forEach(bot => {
                 const btn = document.createElement('button');
                 btn.textContent = bot.id.replace('implant_', '');
