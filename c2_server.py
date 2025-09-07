@@ -46,7 +46,8 @@ async def websocket_handler(request):
             return ws
 
         async for msg in ws:
-            if msg.type == web.WSMsgType.TEXT:      if msg.data == 'pong': continue
+            if msg.type == web.WSMsgType.TEXT:
+                if msg.data == 'pong': continue
                 data = json.loads(msg.data)
                 # Вся твоя логика обработки команд остается без изменений
                 if client_type == 'operator':
