@@ -376,19 +376,17 @@
                     </section>
                     <section class="section-media">
                         <h2>Пранки и Медиа</h2>
-                        <div class="grid-controls">
-                            <div>
-                                <h3>Управление звуком</h3>
-                                <div class="volume-control-wrapper">
-                                    <input type="range" id="volume-slider" min="0" max="100">
-                                    <span id="volume-value">50%</span>
-                                </div>
-                                <button class="btn-action" type="button" id="mute-btn" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
+                        <div>
+                            <h3>Управление звуком</h3>
+                            <div class="volume-control-wrapper">
+                                <input type="range" id="volume-slider" min="0" max="100">
+                                <span id="volume-value">50%</span>
                             </div>
-                            <div>
-                                <h3>Локальные звуки</h3>
-                                <div id="audio-files-list" class="grid-controls"></div>
-                            </div>
+                            <button class="btn-action" type="button" id="mute-btn" style="margin-top:10px" onclick="sendCommand({action: 'mute'})">Вкл/Выкл Звук</button>
+                        </div>
+                        <div>
+                            <h3>Локальные звуки</h3>
+                            <div id="audio-files-list" class="grid-controls"></div>
                         </div>
                         <div>
                             <h3>Локальные изображения</h3>
@@ -411,6 +409,7 @@
         </div>
     </div>
     <div id="screenshot-viewer" onclick="this.style.display='none'"><img id="screenshot-image" src="#" alt="Screenshot" style="display: none;"></div>
+
     <script>
         const ui = {
             botList: document.getElementById('bot-list'),
